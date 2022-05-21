@@ -3,10 +3,10 @@ from __future__ import annotations
 from functools import wraps
 from inspect import isawaitable, signature
 from typing import Optional, Type, get_args, get_origin
-from mayim.convert import convert_sql_params
 
 from psycopg.rows import dict_row
 
+from mayim.convert import convert_sql_params
 from mayim.exception import MayimError
 
 from .base import Executor, is_auto_exec

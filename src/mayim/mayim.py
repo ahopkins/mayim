@@ -1,27 +1,15 @@
-from typing import TYPE_CHECKING, Optional, Type, Union
-from mayim.exception import MayimError
-from mayim.executor import Executor
+from inspect import getmembers, getmodule, isclass, isfunction
+from pathlib import Path
+from typing import Optional, Sequence, Type, TypeVar, Union
+from mayim.convert import convert_sql_params
 
+from mayim.exception import MayimError
+from mayim.executor import Executor, is_auto_exec
 from mayim.hydrator import Hydrator
 from mayim.interface.base import BaseInterface
-from mayim.interface.psycopg import PostgresPool
-from inspect import (
-    getmembers,
-    getmodule,
-    getsourcelines,
-    isawaitable,
-    isclass,
-    isfunction,
-)
-from pathlib import Path
-import re
-from typing import Dict, Optional, Tuple, Type, TypeVar, Union
-
-from mayim.exception import MayimError
-from mayim.interface.base import BaseInterface
-from mayim.executor import Executor, Registry, CONVERT_PATTERN
-
-from .decorator import execute
+from mayim.interface.lazy import LazyPool
+from mayim.interface.postgres import PostgresPool
+from mayim.registry import LazySQLRegistry, Registry
 
 T = TypeVar("T", bound=Executor)
 
@@ -29,7 +17,8 @@ T = TypeVar("T", bound=Executor)
 class Mayim:
     def __init__(
         self,
-        *executors: Union[Type[Executor], Executor],
+        *,
+        executors: Optional[Sequence[Union[Type[Executor], Executor]]] = None,
         dsn: str = "",
         hydrator: Optional[Hydrator] = None,
         pool: Optional[BaseInterface] = None,
@@ -39,7 +28,10 @@ class Mayim:
 
         if not pool and dsn:
             pool = PostgresPool(dsn)
-        self.load(*executors, hydrator=hydrator, pool=pool)
+
+        if not executors:
+            executors = []
+        self.load(executors=executors, hydrator=hydrator, pool=pool)
 
         if hydrator is None:
             hydrator = Hydrator()
@@ -64,7 +56,8 @@ class Mayim:
 
     def load(
         self,
-        *executors: Union[Type[Executor], Executor],
+        *,
+        executors: Sequence[Union[Type[Executor], Executor]],
         hydrator: Optional[Hydrator] = None,
         pool: Optional[BaseInterface] = None,
     ) -> None:
@@ -73,32 +66,49 @@ class Mayim:
         execute a query, then load the corresponding SQL from a .sql file
         and hold in memory.
         """
-        for executor in set(executors):
+
+        to_load = set(executors)
+        to_load.update(Registry().values())
+        for executor in to_load:
             if isclass(executor):
                 try:
                     executor = self.get(executor)
                 except MayimError:
                     ...
             if isinstance(executor, Executor):
+                if executor.pool is LazyPool():
+                    if not pool:
+                        raise MayimError(
+                            f"Cannot load {executor} without a pool"
+                        )
+                    executor._pool = pool
                 executor = executor.__class__
             else:
                 executor(pool=pool, hydrator=hydrator)
+
+            if executor._loaded:
+                continue
+
             executor._queries = {}
             module = getmodule(executor)
             if not module or not module.__file__:
                 raise MayimError(f"Could not locate module for {executor}")
 
             base = Path(module.__file__).parent
+
             for name, func in getmembers(executor, self.isoperation):
-                src = getsourcelines(func)
-                auto_exec = src[0][-1].strip() in ("...", "pass")
-                setattr(executor, name, execute(func))
+                auto_exec = is_auto_exec(func)
+                setattr(executor, name, executor.setup(func))
+
+                query = LazySQLRegistry.get(executor.__name__, name)
                 path = base / "queries" / f"{name}.sql"
+
                 try:
-                    executor._queries[name] = self.load_sql(path)
+                    executor._queries[name] = self.load_sql(query, path)
                 except FileNotFoundError:
                     if auto_exec:
                         ...
+            executor._loaded = True
 
     @staticmethod
     def isoperation(obj):
@@ -113,7 +123,8 @@ class Mayim:
         return False
 
     @staticmethod
-    def load_sql(path: Path):
-        with open(path, "r") as f:
-            raw = f.read()
-            return CONVERT_PATTERN.sub(r"%(\2)s", raw, 0)
+    def load_sql(query: Optional[str], path: Path):
+        if not query:
+            with open(path, "r") as f:
+                query = f.read()
+        return convert_sql_params(query)

@@ -1,7 +1,9 @@
 from typing import AsyncContextManager, Optional
-from mayim.interface.base import BaseInterface
+
 from psycopg import AsyncConnection
 from psycopg_pool import AsyncConnectionPool
+
+from mayim.interface.base import BaseInterface
 
 
 class PostgresPool(BaseInterface):

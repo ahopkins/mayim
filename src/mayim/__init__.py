@@ -1,7 +1,7 @@
 from .decorator import register, sql
 from .executor import Executor
-from .hydrator import Hydrator
 from .executor.postgres import PostgresExecutor
+from .hydrator import Hydrator
 from .mayim import Mayim
 
 __all__ = (

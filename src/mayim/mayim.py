@@ -1,8 +1,8 @@
 from inspect import getmembers, getmodule, isclass, isfunction
 from pathlib import Path
 from typing import Optional, Sequence, Type, TypeVar, Union
-from mayim.convert import convert_sql_params
 
+from mayim.convert import convert_sql_params
 from mayim.exception import MayimError
 from mayim.executor import Executor, is_auto_exec
 from mayim.hydrator import Hydrator

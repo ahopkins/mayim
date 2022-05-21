@@ -1,11 +1,5 @@
 from inspect import Parameter
-from typing import (
-    Any,
-    List,
-    Dict,
-    Type,
-    Union,
-)
+from typing import Any, Dict, List, Type, Union
 
 
 class Hydrator:

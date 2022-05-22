@@ -6,8 +6,8 @@ from inspect import cleandoc, getdoc, getmodule, getsource
 from pathlib import Path
 from textwrap import dedent
 from typing import Dict, Optional, Tuple, Type, Union
-from mayim.exception import MayimError
 
+from mayim.exception import MayimError
 from mayim.hydrator import Hydrator
 from mayim.interface.base import BaseInterface
 from mayim.interface.lazy import LazyPool

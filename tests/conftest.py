@@ -1,9 +1,10 @@
 from unittest.mock import AsyncMock, MagicMock, Mock
+
 import pytest
 
-from mayim.registry import Registry
-from mayim.interface import postgres
 from mayim.executor import Executor
+from mayim.interface import postgres
+from mayim.registry import Registry
 
 from .app.model import Foo
 

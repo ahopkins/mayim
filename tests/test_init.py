@@ -1,4 +1,5 @@
 from unittest.mock import AsyncMock
+
 from mayim import Mayim, register
 from mayim.registry import Registry
 

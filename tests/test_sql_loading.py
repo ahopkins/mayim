@@ -1,5 +1,5 @@
-from mayim import Mayim, PostgresExecutor
-from mayim import sql
+from mayim import Mayim, PostgresExecutor, sql
+
 from .app.model import Item
 
 EXPECTED = """SELECT *

@@ -1,4 +1,5 @@
 from inspect import cleandoc
+
 from mayim.registry import LazySQLRegistry, Registry
 
 

@@ -6,7 +6,6 @@ from mayim.convert import convert_sql_params
 from mayim.exception import MayimError
 from mayim.executor import Executor, is_auto_exec
 from mayim.hydrator import Hydrator
-
 from mayim.interface.base import BaseInterface
 from mayim.interface.lazy import LazyPool
 from mayim.interface.postgres import PostgresPool

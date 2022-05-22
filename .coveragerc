@@ -1,0 +1,20 @@
+[run]
+branch = True
+source = src
+omit =
+    site-packages
+    src/mayim/extension/*
+    tests/*
+
+[html]
+directory = coverage
+
+[report]
+exclude_lines =
+    no cov
+    noqa
+omit =
+    site-packages
+    src/mayim/extension/*
+    tests/*
+skip_empty = True

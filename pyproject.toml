@@ -23,3 +23,7 @@ module = [
     "sanic_ext.*"
 ]
 ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+addopts = "--cov=src --cov-append --cov-report term-missing"

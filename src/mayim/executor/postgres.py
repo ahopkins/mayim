@@ -110,7 +110,6 @@ class PostgresExecutor(Executor):
                         query,
                         model=model,
                         as_list=as_list,
-                        _convert=False,
                         **values,
                     )
 

@@ -40,7 +40,6 @@ class LazySQLRegistry:
     def add(cls, class_name: str, method_name: str, query: str) -> None:
         instance = cls()
         instance._queries[class_name][method_name] = query
-        print(instance._queries)
 
     @classmethod
     def get(cls, class_name: str, method_name: str) -> Optional[str]:

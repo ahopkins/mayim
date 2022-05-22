@@ -34,8 +34,8 @@ module.exports = {
    *
    * ref：https://v1.vuepress.vuejs.org/theme/default-theme-config.html
    */
+  base: '/mayim/',
   themeConfig: {
-    base: '/mayim/',
     repo: 'https://github.com/ahopkins/mayim',
     editLinks: false,
     docsDir: '',

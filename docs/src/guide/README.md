@@ -47,4 +47,4 @@ asyncio.run(run())
 
 This example should be complete and run as is. Of course, you would need to run a Postgres instance somewhere and set the `dsn` string appropriately. Other than that, this should be all set.
 
-Let's continue on to see how we can install it.
+Let's continue on to see how we can install it. :sunglasses:

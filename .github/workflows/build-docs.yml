@@ -1,8 +1,7 @@
 name: Docs build and Deploy
 on:
-  push:
-    branches:
-      - main
+  release:
+    types: [created]
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest

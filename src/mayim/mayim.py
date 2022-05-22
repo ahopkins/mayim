@@ -1,4 +1,4 @@
-from inspect import getmembers, getmodule, isclass, isfunction
+from inspect import getmembers, isclass, isfunction
 from pathlib import Path
 from typing import Optional, Sequence, Type, TypeVar, Union
 
@@ -6,6 +6,7 @@ from mayim.convert import convert_sql_params
 from mayim.exception import MayimError
 from mayim.executor import Executor, is_auto_exec
 from mayim.hydrator import Hydrator
+
 from mayim.interface.base import BaseInterface
 from mayim.interface.lazy import LazyPool
 from mayim.interface.postgres import PostgresPool
@@ -90,24 +91,37 @@ class Mayim:
                 continue
 
             executor._queries = {}
-            module = getmodule(executor)
-            if not module or not module.__file__:
-                raise MayimError(f"Could not locate module for {executor}")
 
-            base = Path(module.__file__).parent
-
-            for name, func in getmembers(executor, self.isoperation):
-                auto_exec = is_auto_exec(func)
-                setattr(executor, name, executor.setup(func))
-
+            base_path = executor.get_base_path("queries")
+            for name, func in getmembers(executor):
                 query = LazySQLRegistry.get(executor.__name__, name)
-                path = base / "queries" / f"{name}.sql"
+                ignore = False
+                filename = name
+
+                if self.isoperation(func):
+                    ...
+                elif (
+                    isfunction(func)
+                    and not any(
+                        hasattr(base, name) for base in executor.__bases__
+                    )
+                    and not name.startswith("_")
+                ):
+                    ignore = True
+                    filename = f"mayim_{filename}"
+                else:
+                    continue
+
+                auto_exec = is_auto_exec(func)
+                path = base_path / f"{filename}.sql"
 
                 try:
                     executor._queries[name] = self.load_sql(query, path)
                 except FileNotFoundError:
-                    if auto_exec:
+                    if auto_exec or ignore:
                         ...
+                else:
+                    setattr(executor, name, executor.setup(func))
             executor._loaded = True
 
     @staticmethod
@@ -119,6 +133,7 @@ class Mayim:
                 or obj.__name__.startswith("insert_")
                 or obj.__name__.startswith("update_")
                 or obj.__name__.startswith("delete_")
+                or obj.__name__.startswith("mayim_")
             )
         return False
 

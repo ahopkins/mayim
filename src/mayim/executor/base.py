@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from ast import AsyncFunctionDef, Constant, Expr, FunctionDef, Pass, parse
 from contextvars import ContextVar
-from inspect import cleandoc, getdoc, getsource
+from inspect import cleandoc, getdoc, getmodule, getsource
+from pathlib import Path
 from textwrap import dedent
-from typing import Dict, Optional, Tuple, Type
+from typing import Dict, Optional, Tuple, Type, Union
+from mayim.exception import MayimError
 
 from mayim.hydrator import Hydrator
 from mayim.interface.base import BaseInterface
@@ -21,6 +23,7 @@ class Executor:
     _fallback_hydrator: Hydrator
     _fallback_pool: Optional[BaseInterface]
     _loaded: bool = False
+    path: Optional[Union[str, Path]] = None
 
     def __init__(
         self,
@@ -72,6 +75,24 @@ class Executor:
     @staticmethod
     def setup(func):
         return func
+
+    @classmethod
+    def get_base_path(cls, directory_name: Optional[str]) -> Path:
+        module = getmodule(cls)
+        if not module or not module.__file__:
+            raise MayimError(f"Could not locate module for {cls}")
+
+        base = Path(module.__file__).parent
+        if cls.path is not None:
+            if isinstance(cls.path, Path):
+                return cls.path
+            else:
+                # TODO:
+                # - support absolute path strings
+                directory_name = cls.path
+        if directory_name:
+            base = base / directory_name
+        return base
 
 
 def is_auto_exec(func):

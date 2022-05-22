@@ -100,6 +100,7 @@ class PostgresExecutor(Executor):
             async def decorated_function(
                 self: PostgresExecutor, *args, **kwargs
             ):
+                self._context.set((model, name))
                 if auto_exec:
                     query = self._queries[name]
                     bound = sig.bind(self, *args, **kwargs)
@@ -116,7 +117,6 @@ class PostgresExecutor(Executor):
                     if model is None:
                         return None
                 else:
-                    self._context.set((model, name))
                     results = await f(self, *args, **kwargs)
 
                 return results

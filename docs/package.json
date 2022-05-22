@@ -1,0 +1,21 @@
+{
+  "name": "MayimDocs",
+  "version": "0.0.1",
+  "description": "Documentation for Mayim",
+  "main": "index.js",
+  "authors": {
+    "name": "Adam",
+    "email": "admhpkns@duck.com"
+  },
+  "repository": "https://github.com/ahopkins/mayim/Mayim Docs",
+  "scripts": {
+    "dev": "vuepress dev src",
+    "build": "vuepress build src"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "vue-tabs-component": "^1.5.0",
+    "vuepress": "^1.5.3",
+    "vuepress-plugin-tabs": "^0.3.0"
+  }
+}

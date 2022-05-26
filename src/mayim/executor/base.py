@@ -5,7 +5,7 @@ from contextvars import ContextVar
 from inspect import cleandoc, getdoc, getmodule, getsource
 from pathlib import Path
 from textwrap import dedent
-from typing import Dict, Optional, Tuple, Type, Union
+from typing import Dict, NamedTuple, Optional, Tuple, Type, Union
 
 from mayim.exception import MayimError
 from mayim.hydrator import Hydrator
@@ -14,12 +14,17 @@ from mayim.interface.lazy import LazyPool
 from mayim.registry import Registry
 
 
+class Query(NamedTuple):
+    query: str
+    named_args: bool
+
+
 class Executor:
     """
     Responsible for being the interface between the DB and the application
     """
 
-    _queries: Dict[str, str]
+    _queries: Dict[str, Query]
     _fallback_hydrator: Hydrator
     _fallback_pool: Optional[BaseInterface]
     _loaded: bool = False
@@ -72,8 +77,12 @@ class Executor:
             f"{self.__class__.__name__} does not define run_sql"
         )
 
+    @classmethod
+    def _load(cls) -> None:
+        ...
+
     @staticmethod
-    def setup(func):
+    def _setup(func):
         return func
 
     @classmethod

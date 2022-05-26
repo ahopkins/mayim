@@ -1,7 +1,30 @@
 import re
 
-CONVERT_PATTERN = re.compile(r"(\$([a-z0-9_]+))")
+# from mayim.exception import MayimError
+
+DOLLAR_KEYWORD = re.compile(r"(\$([a-z][a-z0-9_]*))")
+DOLLAR_POSITIONAL = re.compile(r"(\$([0-9_]+))")
 
 
 def convert_sql_params(query: str) -> str:
-    return CONVERT_PATTERN.sub(r"%(\2)s", query, 0)
+    matches = 0
+    if DOLLAR_KEYWORD.search(query):
+        matches += 1
+        query = DOLLAR_KEYWORD.sub(r"%(\2)s", query, 0)
+    if DOLLAR_POSITIONAL.search(query):
+        matches += 1
+        # query = DOLLAR_KEYWORD.sub(r"%(\2)s", query, 0)
+    if matches > 1:
+        print(">>>>>>>>>>>>>>>>>>>>>>>.. ")
+        # raise MayimError("Could not properly convert SQL params")
+
+    return query
+
+
+qry = """
+SELECT *
+FROM city
+WHERE id = $1
+"""
+
+print(convert_sql_params(qry))

@@ -1,15 +1,13 @@
-from inspect import getmembers, isclass, isfunction
-from pathlib import Path
+from inspect import isclass
 from typing import Optional, Sequence, Type, TypeVar, Union
 
-from mayim.convert import convert_sql_params
 from mayim.exception import MayimError
-from mayim.executor import Executor, is_auto_exec
+from mayim.executor import Executor
 from mayim.hydrator import Hydrator
 from mayim.interface.base import BaseInterface
 from mayim.interface.lazy import LazyPool
 from mayim.interface.postgres import PostgresPool
-from mayim.registry import LazySQLRegistry, Registry
+from mayim.registry import Registry
 
 T = TypeVar("T", bound=Executor)
 
@@ -89,56 +87,4 @@ class Mayim:
             if executor._loaded:
                 continue
 
-            executor._queries = {}
-
-            base_path = executor.get_base_path("queries")
-            for name, func in getmembers(executor):
-                query = LazySQLRegistry.get(executor.__name__, name)
-                ignore = False
-                filename = name
-
-                if self.isoperation(func):
-                    ...
-                elif (
-                    isfunction(func)
-                    and not any(
-                        hasattr(base, name) for base in executor.__bases__
-                    )
-                    and not name.startswith("_")
-                ):
-                    ignore = True
-                    filename = f"mayim_{filename}"
-                else:
-                    continue
-
-                auto_exec = is_auto_exec(func)
-                path = base_path / f"{filename}.sql"
-
-                try:
-                    executor._queries[name] = self.load_sql(query, path)
-                except FileNotFoundError:
-                    if auto_exec or ignore:
-                        ...
-                else:
-                    setattr(executor, name, executor.setup(func))
-            executor._loaded = True
-
-    @staticmethod
-    def isoperation(obj):
-        """Check if the object is a method that starts with get_ or create_"""
-        if isfunction(obj):
-            return (
-                obj.__name__.startswith("select_")
-                or obj.__name__.startswith("insert_")
-                or obj.__name__.startswith("update_")
-                or obj.__name__.startswith("delete_")
-                or obj.__name__.startswith("mayim_")
-            )
-        return False
-
-    @staticmethod
-    def load_sql(query: Optional[str], path: Path):
-        if not query:
-            with open(path, "r") as f:
-                query = f.read()
-        return convert_sql_params(query)
+            executor._load()

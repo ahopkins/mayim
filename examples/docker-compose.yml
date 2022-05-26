@@ -1,0 +1,7 @@
+version: "3.8"
+services:
+  db-postgres:
+    image: aa8y/postgres-dataset:world
+    ports:
+      - 5432:5432
+    command: ["postgres", "-c", "log_statement=all"]

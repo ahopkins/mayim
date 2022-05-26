@@ -1,2 +1,6 @@
 class MayimError(Exception):
     ...
+
+
+class RecordNotFound(MayimError):
+    ...

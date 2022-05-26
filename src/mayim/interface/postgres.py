@@ -7,8 +7,8 @@ from mayim.interface.base import BaseInterface
 
 
 class PostgresPool(BaseInterface):
-    def __init__(self, dsn: str):
-        self._pool = AsyncConnectionPool(dsn)
+    def _setup_pool(self):
+        self._pool = AsyncConnectionPool(self.full_dsn)
 
     async def open(self):
         await self._pool.open()

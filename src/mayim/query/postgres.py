@@ -1,26 +1,21 @@
 import re
-from enum import Enum, auto
 
 from mayim.exception import MayimError
-
-PATTERN_POSITIONAL_PARAMETER = re.compile(r"\$\d+(?![a-z0-9_])")
-PATTERN_KEYWORD_PARAMETER = re.compile(r"\$\d*[a-z_][a-z0-9_]*")
+from mayim.query.base import Query, ParamType
 
 
-class ParamType(Enum):
-    POSITIONAL = auto()
-    KEYWORD = auto()
-    NONE = auto()
+class PostgresQuery(Query):
+    __slots__ = ("text", "param_type")
+    PATTERN_POSITIONAL_PARAMETER = re.compile(r"\$\d+(?![a-z0-9_])")
+    PATTERN_KEYWORD_PARAMETER = re.compile(r"\$\d*[a-z_][a-z0-9_]*")
 
-
-class Query:
     def __init__(self, text: str) -> None:
         self.text = text
         positional_argument_exists = bool(
-            PATTERN_POSITIONAL_PARAMETER.search(self.text)
+            self.PATTERN_POSITIONAL_PARAMETER.search(self.text)
         )
         keyword_argument_exists = bool(
-            PATTERN_KEYWORD_PARAMETER.search(self.text)
+            self.PATTERN_KEYWORD_PARAMETER.search(self.text)
         )
 
         if positional_argument_exists and keyword_argument_exists:
@@ -35,7 +30,7 @@ class Query:
     def convert_sql_params(self) -> str:
         converted_text = self.text.replace("%", "%%")
         if self.param_type == ParamType.POSITIONAL:
-            return PATTERN_POSITIONAL_PARAMETER.sub(r"%s", converted_text, 0)
+            return self.PATTERN_POSITIONAL_PARAMETER.sub(r"%s", converted_text, 0)
         if self.param_type == ParamType.KEYWORD:
-            return PATTERN_KEYWORD_PARAMETER.sub(r"%(\2)s", converted_text, 0)
+            return self.PATTERN_KEYWORD_PARAMETER.sub(r"%(\2)s", converted_text, 0)
         return converted_text

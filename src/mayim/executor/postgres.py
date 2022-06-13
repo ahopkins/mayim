@@ -1,24 +1,33 @@
 from __future__ import annotations
-from typing import Dict
-
 
 from inspect import isawaitable
-from typing import Any, Optional, Type
-
-from psycopg.rows import dict_row
+from typing import Any, Dict, Optional, Sequence, Type
 
 from mayim.exception import RecordNotFound
+from mayim.query.postgres import PostgresQuery
+
 from .sql import SQLExecutor
+
+try:
+    from psycopg.rows import dict_row
+
+    POSTGRES_ENABLED = True
+except ModuleNotFoundError:
+    POSTGRES_ENABLED = False
 
 
 class PostgresExecutor(SQLExecutor):
+    ENABLED = POSTGRES_ENABLED
+    QUERY_CLASS = PostgresQuery
+
     async def _execute(
         self,
         query: str,
         name: str = "",
         model: Optional[Type[object]] = None,
         as_list: bool = False,
-        values: Optional[Dict[str, Any]] = None,
+        posargs: Optional[Sequence[Any]] = None,
+        keyargs: Optional[Dict[str, Any]] = None,
     ):
         no_result = False
         if model is None:
@@ -31,7 +40,8 @@ class PostgresExecutor(SQLExecutor):
             name=name,
             as_list=as_list,
             no_result=no_result,
-            values=values,
+            posargs=posargs,
+            keyargs=keyargs,
         )
         if no_result:
             return None
@@ -48,11 +58,13 @@ class PostgresExecutor(SQLExecutor):
         name: str = "",
         as_list: bool = False,
         no_result: bool = False,
-        values: Optional[Dict[str, Any]] = None,
+        posargs: Optional[Sequence[Any]] = None,
+        keyargs: Optional[Dict[str, Any]] = None,
     ):
         method_name = self._get_method(as_list=as_list)
         async with self.pool.connection() as conn:
-            cursor = await conn.execute(query, values)
+            exec_values = list(posargs) if posargs else keyargs
+            cursor = await conn.execute(query, exec_values)
             if no_result:
                 return None
             cursor.row_factory = dict_row

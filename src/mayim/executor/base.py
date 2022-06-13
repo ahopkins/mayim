@@ -5,36 +5,51 @@ from contextvars import ContextVar
 from inspect import cleandoc, getdoc, getmodule, getsource
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Dict, NamedTuple, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from mayim.exception import MayimError
 from mayim.hydrator import Hydrator
 from mayim.interface.base import BaseInterface
 from mayim.interface.lazy import LazyPool
+from mayim.query.base import Query
 from mayim.registry import Registry
 
-
-class Query(NamedTuple):
-    query: str
-    named_args: bool
+T = TypeVar("T", bound=Query)
 
 
-class Executor:
+class Executor(Generic[T]):
     """
     Responsible for being the interface between the DB and the application
     """
 
-    _queries: Dict[str, Query]
+    _queries: Dict[str, T]
     _fallback_hydrator: Hydrator
     _fallback_pool: Optional[BaseInterface]
     _loaded: bool = False
     path: Optional[Union[str, Path]] = None
+    ENABLED: bool = True
+    QUERY_CLASS: Type[T]
 
     def __init__(
         self,
         pool: Optional[BaseInterface] = None,
         hydrator: Optional[Hydrator] = None,
     ) -> None:
+        if not self.ENABLED:
+            raise MayimError(
+                f"Cannot instantiate {self.__class__.__name__}. "
+                "Perhaps you have a missing dependency?"
+            )
         pool = pool or getattr(self.__class__, "_fallback_pool", None)
         if not pool:
             pool = LazyPool()
@@ -61,7 +76,8 @@ class Executor:
         name: str = "",
         model: Optional[Type[object]] = None,
         as_list: bool = False,
-        values: Optional[Dict[str, Any]] = None,
+        posargs: Optional[Sequence[Any]] = None,
+        keyargs: Optional[Dict[str, Any]] = None,
     ):
 
         raise NotImplementedError(
@@ -74,7 +90,8 @@ class Executor:
         name: str = "",
         as_list: bool = False,
         no_result: bool = False,
-        values: Optional[Dict[str, Any]] = None,
+        posargs: Optional[Sequence[Any]] = None,
+        keyargs: Optional[Dict[str, Any]] = None,
     ):
         raise NotImplementedError(
             f"{self.__class__.__name__} does not define run_sql"

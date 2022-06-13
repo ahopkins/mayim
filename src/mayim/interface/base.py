@@ -3,8 +3,6 @@ from collections import namedtuple
 from typing import Optional
 from urllib.parse import urlparse
 
-from mayim.exception import MayimError
-
 UrlMapping = namedtuple("UrlMapping", ("key", "cast"))
 
 

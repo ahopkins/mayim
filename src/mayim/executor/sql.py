@@ -3,28 +3,37 @@ from __future__ import annotations
 from functools import wraps
 from inspect import getmembers, isfunction, signature
 from pathlib import Path
-from typing import Any, Dict, Optional, Type, get_args, get_origin
-
+from typing import Any, Dict, Optional, Sequence, Type, get_args, get_origin
 
 from mayim.convert import convert_sql_params
 from mayim.exception import MayimError
+from mayim.query.sql import ParamType, SQLQuery
 from mayim.registry import LazySQLRegistry
 
-from .base import Executor, Query, is_auto_exec
+from .base import Executor, is_auto_exec
 
 
-class SQLExecutor(Executor):
+class SQLExecutor(Executor[SQLQuery]):
+    ENABLED: bool = False
+    QUERY_CLASS = SQLQuery
+
     def execute(
         self,
         query: str,
         name: str = "",
         model: Optional[Type[object]] = None,
         as_list: bool = False,
-        values: Optional[Dict[str, Any]] = None,
+        posargs: Optional[Sequence[Any]] = None,
+        keyargs: Optional[Dict[str, Any]] = None,
     ):
         query = convert_sql_params(query)
         return self._execute(
-            query=query, name=name, model=model, as_list=as_list, values=values
+            query=query,
+            name=name,
+            model=model,
+            as_list=as_list,
+            posargs=posargs,
+            keyargs=keyargs,
         )
 
     async def _execute(
@@ -33,7 +42,8 @@ class SQLExecutor(Executor):
         name: str = "",
         model: Optional[Type[object]] = None,
         as_list: bool = False,
-        values: Optional[Dict[str, Any]] = None,
+        posargs: Optional[Sequence[Any]] = None,
+        keyargs: Optional[Dict[str, Any]] = None,
     ):
         ...
 
@@ -43,7 +53,8 @@ class SQLExecutor(Executor):
         name: str = "",
         as_list: bool = False,
         no_result: bool = False,
-        values: Optional[Dict[str, Any]] = None,
+        posargs: Optional[Sequence[Any]] = None,
+        keyargs: Optional[Dict[str, Any]] = None,
     ):
         if query:
             query = convert_sql_params(query)
@@ -51,13 +62,13 @@ class SQLExecutor(Executor):
             _, query_name = self._context.get()
             # TODO:
             # - Fixed for positional
-            query = (self._queries[query_name]).query
+            query = (self._queries[query_name]).text
         return self._run_sql(
             query=query,
-            name=name,
             as_list=as_list,
             no_result=no_result,
-            values=values,
+            posargs=posargs,
+            keyargs=keyargs,
         )
 
     async def _run_sql(
@@ -66,7 +77,8 @@ class SQLExecutor(Executor):
         name: str = "",
         as_list: bool = False,
         no_result: bool = False,
-        values: Optional[Dict[str, Any]] = None,
+        posargs: Optional[Sequence[Any]] = None,
+        keyargs: Optional[Dict[str, Any]] = None,
     ):
         ...
 
@@ -98,7 +110,9 @@ class SQLExecutor(Executor):
             path = base_path / f"{filename}.sql"
 
             try:
-                cls._queries[name] = Query(cls._load_sql(query, path), True)
+                cls._queries[name] = cls.QUERY_CLASS(
+                    cls._load_sql(query, path)
+                )
             except FileNotFoundError:
                 if auto_exec or ignore:
                     ...
@@ -162,25 +176,30 @@ class SQLExecutor(Executor):
                     query = self._queries[name]
                     bound = sig.bind(self, *args, **kwargs)
                     bound.apply_defaults()
-                    values = {**bound.arguments}
-                    values.pop("self", None)
+                    keyargs = {**bound.arguments}
+                    keyargs.pop("self", None)
 
-                    if query.named_args:
+                    if query.param_type is ParamType.KEYWORD:
                         results = await self._execute(
-                            query.query,
+                            query.text,
                             model=model,
                             name=name,
                             as_list=as_list,
-                            values=values,
+                            keyargs=keyargs,
+                        )
+                    elif query.param_type is ParamType.POSITIONAL:
+                        results = await self._execute(
+                            query.text,
+                            model=model,
+                            as_list=as_list,
+                            posargs=list(keyargs.values()),
                         )
                     else:
-                        raise Exception("POSITIONAL")
-                        # results = await self._execute(
-                        #     query.query,
-                        #     model=model,
-                        #     as_list=as_list,
-                        #     *values.values(),
-                        # )
+                        results = await self._execute(
+                            query.text,
+                            model=model,
+                            as_list=as_list,
+                        )
 
                     if model is None:
                         return None

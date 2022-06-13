@@ -5,7 +5,7 @@ from mayim.registry import Registry
 
 
 def test_universal_pool_dsn(FooExecutor):
-    Mayim(executors=[FooExecutor], dsn="something")
+    Mayim(executors=[FooExecutor], dsn="foo://user:password@host:1234/db")
 
     assert len(Registry()) == 1
     assert FooExecutor._loaded

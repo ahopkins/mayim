@@ -1,24 +1,31 @@
 from __future__ import annotations
 
-
 from inspect import isawaitable
-from typing import TYPE_CHECKING, Any, Dict, Optional, Type
+from typing import Any, Dict, Optional, Sequence, Type
 
 from mayim.exception import RecordNotFound
+
 from .sql import SQLExecutor
 
-if TYPE_CHECKING:
+try:
     from asyncmy.cursors import DictCursor
+
+    MYSQL_ENABLED = True
+except ModuleNotFoundError:
+    MYSQL_ENABLED = False
 
 
 class MysqlExecutor(SQLExecutor):
+    ENABLED = MYSQL_ENABLED
+
     async def _execute(
         self,
         query: str,
         name: str = "",
         model: Optional[Type[object]] = None,
         as_list: bool = False,
-        values: Optional[Dict[str, Any]] = None,
+        posargs: Optional[Sequence[Any]] = None,
+        keyargs: Optional[Dict[str, Any]] = None,
     ):
         no_result = False
         if model is None:
@@ -30,7 +37,8 @@ class MysqlExecutor(SQLExecutor):
             query=query,
             as_list=as_list,
             no_result=no_result,
-            values=values,
+            posargs=posargs,
+            keyargs=keyargs,
         )
         if not raw:
             raise RecordNotFound("not found")
@@ -45,7 +53,8 @@ class MysqlExecutor(SQLExecutor):
         name: str = "",
         as_list: bool = False,
         no_result: bool = False,
-        values: Optional[Dict[str, Any]] = None,
+        posargs: Optional[Sequence[Any]] = None,
+        keyargs: Optional[Dict[str, Any]] = None,
     ):
         method_name = self._get_method(as_list=as_list)
         async with self.pool.connection() as conn:

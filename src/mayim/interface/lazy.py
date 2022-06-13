@@ -13,6 +13,15 @@ class LazyPool(BaseInterface):
             cls._singleton = super().__new__(cls)
         return cls._singleton
 
+    def _setup_pool(self):
+        ...
+
+    def _populate_connection_args(self):
+        ...
+
+    def _populate_dsn(self):
+        ...
+
     async def open(self):
         ...
 

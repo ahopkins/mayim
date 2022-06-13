@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from functools import wraps
-from inspect import getmembers, isfunction, signature
+from inspect import getmembers, isawaitable, isfunction, signature
 from pathlib import Path
-from typing import Any, Optional, Sequence, Type, get_args, get_origin
+from typing import Any, Dict, Optional, Sequence, Type, get_args, get_origin
 
 from mayim.convert import convert_sql_params
-from mayim.exception import MayimError
+from mayim.exception import MayimError, RecordNotFound
 from mayim.query.sql import ParamType, SQLQuery
 from mayim.registry import LazySQLRegistry
 
@@ -16,40 +16,67 @@ from .base import Executor, is_auto_exec
 class SQLExecutor(Executor[SQLQuery]):
     ENABLED: bool = False
     QUERY_CLASS = SQLQuery
+    _filename_prefix: str = "mayim_"
 
     def execute(
         self,
         query: str,
+        name: str = "",
         model: Optional[Type[object]] = None,
         as_list: bool = False,
         posargs: Optional[Sequence[Any]] = None,
-        **values,
+        keyargs: Optional[Dict[str, Any]] = None,
     ):
         query = convert_sql_params(query)
         return self._execute(
             query=query,
+            name=name,
             model=model,
             as_list=as_list,
             posargs=posargs,
-            **values,
+            keyargs=keyargs,
         )
 
     async def _execute(
         self,
         query: str,
+        name: str = "",
         model: Optional[Type[object]] = None,
         as_list: bool = False,
         posargs: Optional[Sequence[Any]] = None,
-        **values,
+        keyargs: Optional[Dict[str, Any]] = None,
     ):
-        ...
+        no_result = False
+        if model is None:
+            model, _ = self._context.get()
+        if model is None:
+            no_result = True
+        factory = self.hydrator._make(model)
+        raw = await self._run_sql(
+            query=query,
+            name=name,
+            as_list=as_list,
+            no_result=no_result,
+            posargs=posargs,
+            keyargs=keyargs,
+        )
+        if no_result:
+            return None
+        if not raw:
+            raise RecordNotFound("not found")
+        results = factory(raw)
+        if isawaitable(results):
+            results = await results
+        return results
 
     def run_sql(
         self,
         query: str = "",
+        name: str = "",
         as_list: bool = False,
+        no_result: bool = False,
         posargs: Optional[Sequence[Any]] = None,
-        **values,
+        keyargs: Optional[Dict[str, Any]] = None,
     ):
         if query:
             query = convert_sql_params(query)
@@ -59,15 +86,21 @@ class SQLExecutor(Executor[SQLQuery]):
             # - Fixed for positional
             query = (self._queries[query_name]).text
         return self._run_sql(
-            query=query, as_list=as_list, posargs=posargs, **values
+            query=query,
+            as_list=as_list,
+            no_result=no_result,
+            posargs=posargs,
+            keyargs=keyargs,
         )
 
     async def _run_sql(
         self,
         query: str,
+        name: str = "",
         as_list: bool = False,
+        no_result: bool = False,
         posargs: Optional[Sequence[Any]] = None,
-        **values,
+        keyargs: Optional[Dict[str, Any]] = None,
     ):
         ...
 
@@ -82,16 +115,16 @@ class SQLExecutor(Executor[SQLQuery]):
         for name, func in getmembers(cls):
             query = LazySQLRegistry.get(cls.__name__, name)
 
+            filename = name
             if cls._isoperation(func):
                 ignore = False
-                filename = name
             elif (
                 isfunction(func)
                 and not any(hasattr(base, name) for base in cls.__bases__)
                 and not name.startswith("_")
             ):
                 ignore = True
-                filename = f"mayim_{filename}"
+                filename = f"{cls._filename_prefix}{filename}"
             else:
                 continue
 
@@ -146,12 +179,16 @@ class SQLExecutor(Executor[SQLQuery]):
 
         if model is not None and (origin := get_origin(model)):
             as_list = bool(origin is list)
-            if not as_list:
-                return MayimError(
+            as_dict = bool(origin is dict)
+            if as_list:
+                model = get_args(model)[0]
+            elif as_dict:
+                model = dict
+            else:
+                raise MayimError(
                     f"{func} must return either a model or a list of models. "
                     "eg. -> Foo or List[Foo]"
                 )
-            model = get_args(model)[0]
 
         def decorator(f):
             @wraps(f)
@@ -161,22 +198,23 @@ class SQLExecutor(Executor[SQLQuery]):
                     query = self._queries[name]
                     bound = sig.bind(self, *args, **kwargs)
                     bound.apply_defaults()
-                    values = {**bound.arguments}
-                    values.pop("self", None)
+                    keyargs = {**bound.arguments}
+                    keyargs.pop("self", None)
 
                     if query.param_type is ParamType.KEYWORD:
                         results = await self._execute(
                             query.text,
                             model=model,
+                            name=name,
                             as_list=as_list,
-                            **values,
+                            keyargs=keyargs,
                         )
                     elif query.param_type is ParamType.POSITIONAL:
                         results = await self._execute(
                             query.text,
                             model=model,
                             as_list=as_list,
-                            posargs=list(values.values()),
+                            posargs=list(keyargs.values()),
                         )
                     else:
                         results = await self._execute(

@@ -73,10 +73,11 @@ class Executor(Generic[T]):
     def execute(
         self,
         query: str,
+        name: str = "",
         model: Optional[Type[object]] = None,
         as_list: bool = False,
         posargs: Optional[Sequence[Any]] = None,
-        **values,
+        keyargs: Optional[Dict[str, Any]] = None,
     ):
 
         raise NotImplementedError(
@@ -86,9 +87,11 @@ class Executor(Generic[T]):
     def run_sql(
         self,
         query: str = "",
+        name: str = "",
         as_list: bool = False,
+        no_result: bool = False,
         posargs: Optional[Sequence[Any]] = None,
-        **values,
+        keyargs: Optional[Dict[str, Any]] = None,
     ):
         raise NotImplementedError(
             f"{self.__class__.__name__} does not define run_sql"

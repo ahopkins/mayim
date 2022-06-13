@@ -25,7 +25,7 @@ async def test_auto_load_keyword(postgres_connection):
         async def select_items(self, limit: int = 4, offset: int = 0) -> Item:
             ...
 
-    Mayim(executors=[ItemExecutor], dsn="fake")
+    Mayim(executors=[ItemExecutor], dsn="foo://user:password@host:1234/db")
     executor = Mayim.get(ItemExecutor)
 
     assert ItemExecutor._queries["select_items"] == EXPECTED_KEYWORD
@@ -52,7 +52,7 @@ async def test_sql_decorator_keyword(postgres_connection):
         async def select_items(self, limit: int = 4, offset: int = 0) -> Item:
             ...
 
-    Mayim(executors=[ItemExecutor], dsn="fake")
+    Mayim(executors=[ItemExecutor], dsn="foo://user:password@host:1234/db")
     executor = Mayim.get(ItemExecutor)
 
     assert ItemExecutor._queries["select_items"] != EXPECTED_KEYWORD
@@ -76,7 +76,7 @@ async def test_auto_load_positional(postgres_connection):
         ) -> Item:
             ...
 
-    Mayim(executors=[ItemExecutor], dsn="fake")
+    Mayim(executors=[ItemExecutor], dsn="foo://user:password@host:1234/db")
     executor = Mayim.get(ItemExecutor)
 
     assert (
@@ -108,7 +108,7 @@ async def test_sql_decorator_positional(postgres_connection):
         ) -> Item:
             ...
 
-    Mayim(executors=[ItemExecutor], dsn="fake")
+    Mayim(executors=[ItemExecutor], dsn="foo://user:password@host:1234/db")
     executor = Mayim.get(ItemExecutor)
 
     assert (

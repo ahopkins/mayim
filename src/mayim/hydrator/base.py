@@ -7,6 +7,8 @@ class Hydrator:
 
     def _make(self, model: Type[object]):
         def factory(data: Union[Dict[str, Any], List[Dict[str, Any]]]):
+            if model is None:
+                return None
             if isinstance(data, list):
                 return [self.hydrate(row, model=model) for row in data]
             return self.hydrate(data, model=model)
@@ -18,4 +20,6 @@ class Hydrator:
     ):
         if model is Parameter.empty:
             model = self.fallback
+        elif model in (str, int, float, bool):
+            return model(*data.values())
         return model(**data)

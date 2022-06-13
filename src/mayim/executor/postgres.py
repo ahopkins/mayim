@@ -1,8 +1,9 @@
 from __future__ import annotations
+from typing import Dict
 
 
 from inspect import isawaitable
-from typing import Optional, Type
+from typing import Any, Optional, Type
 
 from psycopg.rows import dict_row
 
@@ -14,14 +15,26 @@ class PostgresExecutor(SQLExecutor):
     async def _execute(
         self,
         query: str,
+        name: str = "",
         model: Optional[Type[object]] = None,
         as_list: bool = False,
-        **values,
+        values: Optional[Dict[str, Any]] = None,
     ):
+        no_result = False
         if model is None:
             model, _ = self._context.get()
+        if model is None:
+            no_result = True
         factory = self.hydrator._make(model)
-        raw = await self._run_sql(query=query, as_list=as_list, **values)
+        raw = await self._run_sql(
+            query=query,
+            name=name,
+            as_list=as_list,
+            no_result=no_result,
+            values=values,
+        )
+        if no_result:
+            return None
         if not raw:
             raise RecordNotFound("not found")
         results = factory(raw)
@@ -32,12 +45,16 @@ class PostgresExecutor(SQLExecutor):
     async def _run_sql(
         self,
         query: str,
+        name: str = "",
         as_list: bool = False,
-        **values,
+        no_result: bool = False,
+        values: Optional[Dict[str, Any]] = None,
     ):
         method_name = self._get_method(as_list=as_list)
         async with self.pool.connection() as conn:
             cursor = await conn.execute(query, values)
+            if no_result:
+                return None
             cursor.row_factory = dict_row
             raw = await getattr(cursor, method_name)()
             return raw

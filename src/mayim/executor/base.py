@@ -5,7 +5,7 @@ from contextvars import ContextVar
 from inspect import cleandoc, getdoc, getmodule, getsource
 from pathlib import Path
 from textwrap import dedent
-from typing import Dict, NamedTuple, Optional, Tuple, Type, Union
+from typing import Any, Dict, NamedTuple, Optional, Tuple, Type, Union
 
 from mayim.exception import MayimError
 from mayim.hydrator import Hydrator
@@ -58,9 +58,10 @@ class Executor:
     def execute(
         self,
         query: str,
+        name: str = "",
         model: Optional[Type[object]] = None,
         as_list: bool = False,
-        **values,
+        values: Optional[Dict[str, Any]] = None,
     ):
 
         raise NotImplementedError(
@@ -70,8 +71,10 @@ class Executor:
     def run_sql(
         self,
         query: str = "",
+        name: str = "",
         as_list: bool = False,
-        **values,
+        no_result: bool = False,
+        values: Optional[Dict[str, Any]] = None,
     ):
         raise NotImplementedError(
             f"{self.__class__.__name__} does not define run_sql"

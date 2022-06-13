@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import wraps
 from inspect import getmembers, isfunction, signature
 from pathlib import Path
-from typing import Optional, Type, get_args, get_origin
+from typing import Any, Dict, Optional, Type, get_args, get_origin
 
 
 from mayim.convert import convert_sql_params
@@ -17,29 +17,33 @@ class SQLExecutor(Executor):
     def execute(
         self,
         query: str,
+        name: str = "",
         model: Optional[Type[object]] = None,
         as_list: bool = False,
-        **values,
+        values: Optional[Dict[str, Any]] = None,
     ):
         query = convert_sql_params(query)
         return self._execute(
-            query=query, model=model, as_list=as_list, **values
+            query=query, name=name, model=model, as_list=as_list, values=values
         )
 
     async def _execute(
         self,
         query: str,
+        name: str = "",
         model: Optional[Type[object]] = None,
         as_list: bool = False,
-        **values,
+        values: Optional[Dict[str, Any]] = None,
     ):
         ...
 
     def run_sql(
         self,
         query: str = "",
+        name: str = "",
         as_list: bool = False,
-        **values,
+        no_result: bool = False,
+        values: Optional[Dict[str, Any]] = None,
     ):
         if query:
             query = convert_sql_params(query)
@@ -48,13 +52,21 @@ class SQLExecutor(Executor):
             # TODO:
             # - Fixed for positional
             query = (self._queries[query_name]).query
-        return self._run_sql(query=query, as_list=as_list, **values)
+        return self._run_sql(
+            query=query,
+            name=name,
+            as_list=as_list,
+            no_result=no_result,
+            values=values,
+        )
 
     async def _run_sql(
         self,
         query: str,
+        name: str = "",
         as_list: bool = False,
-        **values,
+        no_result: bool = False,
+        values: Optional[Dict[str, Any]] = None,
     ):
         ...
 
@@ -131,12 +143,16 @@ class SQLExecutor(Executor):
 
         if model is not None and (origin := get_origin(model)):
             as_list = bool(origin is list)
-            if not as_list:
-                return MayimError(
+            as_dict = bool(origin is dict)
+            if as_list:
+                model = get_args(model)[0]
+            elif as_dict:
+                model = dict
+            else:
+                raise MayimError(
                     f"{func} must return either a model or a list of models. "
                     "eg. -> Foo or List[Foo]"
                 )
-            model = get_args(model)[0]
 
         def decorator(f):
             @wraps(f)
@@ -153,8 +169,9 @@ class SQLExecutor(Executor):
                         results = await self._execute(
                             query.query,
                             model=model,
+                            name=name,
                             as_list=as_list,
-                            **values,
+                            values=values,
                         )
                     else:
                         raise Exception("POSITIONAL")

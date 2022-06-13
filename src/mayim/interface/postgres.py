@@ -7,6 +7,8 @@ from mayim.interface.base import BaseInterface
 
 
 class PostgresPool(BaseInterface):
+    scheme = "postgres"
+
     def _setup_pool(self):
         self._pool = AsyncConnectionPool(self.full_dsn)
 

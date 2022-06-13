@@ -5,7 +5,17 @@ from contextvars import ContextVar
 from inspect import cleandoc, getdoc, getmodule, getsource
 from pathlib import Path
 from textwrap import dedent
-from typing import Dict, Generic, Optional, Tuple, Type, TypeVar, Union
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from mayim.exception import MayimError
 from mayim.hydrator import Hydrator
@@ -28,7 +38,7 @@ class Executor(Generic[T]):
     _loaded: bool = False
     path: Optional[Union[str, Path]] = None
     ENABLED: bool = True
-    QUERY_CLASS: Type[Query] = Query
+    QUERY_CLASS: Type[T] = Query
 
     def __init__(
         self,
@@ -65,6 +75,7 @@ class Executor(Generic[T]):
         query: str,
         model: Optional[Type[object]] = None,
         as_list: bool = False,
+        posargs: Optional[Sequence[Any]] = None,
         **values,
     ):
 
@@ -76,6 +87,7 @@ class Executor(Generic[T]):
         self,
         query: str = "",
         as_list: bool = False,
+        posargs: Optional[Sequence[Any]] = None,
         **values,
     ):
         raise NotImplementedError(

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from inspect import isawaitable
-from typing import Optional, Type
+from typing import Any, Optional, Sequence, Type
 
 from mayim.exception import RecordNotFound
 from mayim.query.postgres import PostgresQuery
@@ -25,12 +25,15 @@ class PostgresExecutor(SQLExecutor):
         query: str,
         model: Optional[Type[object]] = None,
         as_list: bool = False,
+        posargs: Optional[Sequence[Any]] = None,
         **values,
     ):
         if model is None:
             model, _ = self._context.get()
         factory = self.hydrator._make(model)
-        raw = await self._run_sql(query=query, as_list=as_list, **values)
+        raw = await self._run_sql(
+            query=query, as_list=as_list, posargs=posargs, **values
+        )
         if not raw:
             raise RecordNotFound("not found")
         results = factory(raw)
@@ -42,11 +45,13 @@ class PostgresExecutor(SQLExecutor):
         self,
         query: str,
         as_list: bool = False,
+        posargs: Optional[Sequence[Any]] = None,
         **values,
     ):
         method_name = self._get_method(as_list=as_list)
         async with self.pool.connection() as conn:
-            cursor = await conn.execute(query, values)
+            exec_values = list(posargs) if posargs else values
+            cursor = await conn.execute(query, exec_values)
             cursor.row_factory = dict_row
             raw = await getattr(cursor, method_name)()
             return raw

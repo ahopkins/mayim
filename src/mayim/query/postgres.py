@@ -6,7 +6,7 @@ from mayim.query.sql import ParamType, SQLQuery
 
 class PostgresQuery(SQLQuery):
     __slots__ = ("text", "param_type")
-    PATTERN_POSITIONAL_PARAMETER = re.compile(r"%\(\d+(?![a-z0-9_])\)")
+    PATTERN_POSITIONAL_PARAMETER = re.compile(r"%s")
     PATTERN_KEYWORD_PARAMETER = re.compile(r"%\([a-z_][a-z0-9_]*\)")
 
     def __init__(self, text: str) -> None:

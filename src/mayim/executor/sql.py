@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import wraps
 from inspect import getmembers, isfunction, signature
 from pathlib import Path
-from typing import Optional, Type, get_args, get_origin
+from typing import Any, Optional, Sequence, Type, get_args, get_origin
 
 from mayim.convert import convert_sql_params
 from mayim.exception import MayimError
@@ -22,11 +22,16 @@ class SQLExecutor(Executor[SQLQuery]):
         query: str,
         model: Optional[Type[object]] = None,
         as_list: bool = False,
+        posargs: Optional[Sequence[Any]] = None,
         **values,
     ):
         query = convert_sql_params(query)
         return self._execute(
-            query=query, model=model, as_list=as_list, **values
+            query=query,
+            model=model,
+            as_list=as_list,
+            posargs=posargs,
+            **values,
         )
 
     async def _execute(
@@ -34,6 +39,7 @@ class SQLExecutor(Executor[SQLQuery]):
         query: str,
         model: Optional[Type[object]] = None,
         as_list: bool = False,
+        posargs: Optional[Sequence[Any]] = None,
         **values,
     ):
         ...
@@ -42,6 +48,7 @@ class SQLExecutor(Executor[SQLQuery]):
         self,
         query: str = "",
         as_list: bool = False,
+        posargs: Optional[Sequence[Any]] = None,
         **values,
     ):
         if query:
@@ -51,12 +58,15 @@ class SQLExecutor(Executor[SQLQuery]):
             # TODO:
             # - Fixed for positional
             query = (self._queries[query_name]).text
-        return self._run_sql(query=query, as_list=as_list, **values)
+        return self._run_sql(
+            query=query, as_list=as_list, posargs=posargs, **values
+        )
 
     async def _run_sql(
         self,
         query: str,
         as_list: bool = False,
+        posargs: Optional[Sequence[Any]] = None,
         **values,
     ):
         ...
@@ -162,13 +172,12 @@ class SQLExecutor(Executor[SQLQuery]):
                             **values,
                         )
                     elif query.param_type is ParamType.POSITIONAL:
-                        raise Exception("POSITIONAL")
-                        # results = await self._execute(
-                        #     query.query,
-                        #     model=model,
-                        #     as_list=as_list,
-                        #     *values.values(),
-                        # )
+                        results = await self._execute(
+                            query.text,
+                            model=model,
+                            as_list=as_list,
+                            posargs=values.values(),
+                        )
                     else:
                         results = await self._execute(
                             query.text,

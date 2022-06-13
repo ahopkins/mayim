@@ -13,8 +13,7 @@ def convert_sql_params(query: str) -> str:
         query = DOLLAR_KEYWORD.sub(r"%(\2)s", query, 0)
     if DOLLAR_POSITIONAL.search(query):
         matches += 1
-        query = DOLLAR_KEYWORD.sub(r"%(\2)s", query, 0)
+        query = DOLLAR_POSITIONAL.sub(r"%s", query, 0)
     if matches > 1:
         raise MayimError("Could not properly convert SQL params")
-
     return query

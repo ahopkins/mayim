@@ -1,4 +1,4 @@
-from typing import AsyncContextManager, Optional
+from typing import Optional
 
 import asyncmy
 

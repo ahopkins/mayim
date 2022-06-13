@@ -1,11 +1,14 @@
 from mayim import Mayim, PostgresExecutor, sql
-
+from mayim.query.postgres import PostgresQuery
 from .app.model import Item
 
-EXPECTED = """SELECT *
+
+EXPECTED = PostgresQuery(
+    """SELECT *
 FROM items
 LIMIT %(limit)s OFFSET %(offset)s;
 """
+)
 
 
 async def test_auto_load(postgres_connection):
@@ -22,7 +25,7 @@ async def test_auto_load(postgres_connection):
     await executor.select_items()
 
     postgres_connection.execute.assert_called_with(
-        EXPECTED, {"limit": 4, "offset": 0}
+        EXPECTED.text, {"limit": 4, "offset": 0}
     )
 
 
@@ -45,7 +48,7 @@ async def test_sql_decorator(postgres_connection):
     assert ItemExecutor._queries["select_items"] != EXPECTED
     await executor.select_items(limit=10, offset=40)
 
-    query = EXPECTED.replace("items", "otheritems").strip()
+    query_text = EXPECTED.text.replace("items", "otheritems").strip()
     postgres_connection.execute.assert_called_with(
-        query, {"limit": 10, "offset": 40}
+        query_text, {"limit": 10, "offset": 40}
     )

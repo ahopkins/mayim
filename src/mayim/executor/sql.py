@@ -8,13 +8,15 @@ from typing import Optional, Type, get_args, get_origin
 
 from mayim.convert import convert_sql_params
 from mayim.exception import MayimError
+from mayim.query.sql import SQLQuery, ParamType
 from mayim.registry import LazySQLRegistry
 
-from .base import Executor, Query, is_auto_exec
+from .base import Executor, is_auto_exec
 
 
-class SQLExecutor(Executor):
+class SQLExecutor(Executor[SQLQuery]):
     ENABLED: bool = False
+    QUERY_CLASS = SQLQuery
 
     def execute(
         self,
@@ -49,7 +51,7 @@ class SQLExecutor(Executor):
             _, query_name = self._context.get()
             # TODO:
             # - Fixed for positional
-            query = (self._queries[query_name]).query
+            query = (self._queries[query_name]).text
         return self._run_sql(query=query, as_list=as_list, **values)
 
     async def _run_sql(
@@ -88,7 +90,9 @@ class SQLExecutor(Executor):
             path = base_path / f"{filename}.sql"
 
             try:
-                cls._queries[name] = Query(cls._load_sql(query, path), True)
+                cls._queries[name] = cls.QUERY_CLASS(
+                    cls._load_sql(query, path)
+                )
             except FileNotFoundError:
                 if auto_exec or ignore:
                     ...
@@ -151,14 +155,14 @@ class SQLExecutor(Executor):
                     values = {**bound.arguments}
                     values.pop("self", None)
 
-                    if query.named_args:
+                    if query.param_type is ParamType.KEYWORD:
                         results = await self._execute(
-                            query.query,
+                            query.text,
                             model=model,
                             as_list=as_list,
                             **values,
                         )
-                    else:
+                    elif query.param_type is ParamType.POSITIONAL:
                         raise Exception("POSITIONAL")
                         # results = await self._execute(
                         #     query.query,
@@ -166,6 +170,12 @@ class SQLExecutor(Executor):
                         #     as_list=as_list,
                         #     *values.values(),
                         # )
+                    else:
+                        results = await self._execute(
+                            query.text,
+                            model=model,
+                            as_list=as_list,
+                        )
 
                     if model is None:
                         return None

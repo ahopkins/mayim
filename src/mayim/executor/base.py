@@ -5,31 +5,30 @@ from contextvars import ContextVar
 from inspect import cleandoc, getdoc, getmodule, getsource
 from pathlib import Path
 from textwrap import dedent
-from typing import Dict, NamedTuple, Optional, Tuple, Type, Union
+from typing import Dict, Generic, Optional, Tuple, Type, TypeVar, Union
 
 from mayim.exception import MayimError
 from mayim.hydrator import Hydrator
 from mayim.interface.base import BaseInterface
 from mayim.interface.lazy import LazyPool
 from mayim.registry import Registry
+from mayim.query.base import Query
+
+T = TypeVar("T", bound=Query)
 
 
-class Query(NamedTuple):
-    query: str
-    named_args: bool
-
-
-class Executor:
+class Executor(Generic[T]):
     """
     Responsible for being the interface between the DB and the application
     """
 
-    _queries: Dict[str, Query]
+    _queries: Dict[str, T]
     _fallback_hydrator: Hydrator
     _fallback_pool: Optional[BaseInterface]
     _loaded: bool = False
     path: Optional[Union[str, Path]] = None
     ENABLED: bool = True
+    QUERY_CLASS: Type[Query] = Query
 
     def __init__(
         self,

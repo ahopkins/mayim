@@ -20,7 +20,8 @@ include_trailing_comma = true
 module = [
     "psycopg.*",
     "psycopg_pool.*",
-    "sanic_ext.*"
+    "sanic_ext.*",
+    "asyncmy.*"
 ]
 ignore_missing_imports = true
 

@@ -38,7 +38,7 @@ class Executor(Generic[T]):
     _loaded: bool = False
     path: Optional[Union[str, Path]] = None
     ENABLED: bool = True
-    QUERY_CLASS: Type[T] = Query
+    QUERY_CLASS: Type[T]
 
     def __init__(
         self,

@@ -176,7 +176,7 @@ class SQLExecutor(Executor[SQLQuery]):
                             query.text,
                             model=model,
                             as_list=as_list,
-                            posargs=values.values(),
+                            posargs=list(values.values()),
                         )
                     else:
                         results = await self._execute(

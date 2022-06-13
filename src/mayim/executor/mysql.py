@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Dict, Optional, Sequence
+
 from mayim.query.mysql import MysqlQuery
 
 from .sql import SQLExecutor

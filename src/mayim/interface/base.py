@@ -3,6 +3,8 @@ from collections import namedtuple
 from typing import Optional
 from urllib.parse import urlparse
 
+from mayim.exception import MayimError
+
 UrlMapping = namedtuple("UrlMapping", ("key", "cast"))
 
 
@@ -53,28 +55,28 @@ class BaseInterface(ABC):
             db (int, optional): DB db. Defaults to 1
         """
 
-        # if dsn and host:
-        #     raise MayimError("Cannot connect to DB using host and dsn")
+        if dsn and host:
+            raise MayimError("Cannot connect to DB using host and dsn")
 
-        # if not dsn:
-        #     if port and (
-        #         not isinstance(port, int) or port not in range(0, 65536)
-        #     ):
-        #         raise MayimError(
-        #             "Port: must be an integer between 0 and 65535"
-        #         )
+        if not dsn:
+            if port and (
+                not isinstance(port, int) or port not in range(0, 65536)
+            ):
+                raise MayimError(
+                    "port: must be an integer between 0 and 65535"
+                )
 
-        #     if host and not len(host) > 0 or not isinstance(host, str):
-        #         raise MayimError(
-        #             "host: must be a string at least 1 character long"
-        #         )
+            if host and (not isinstance(host, str) or not len(host) > 0):
+                raise MayimError(
+                    "host: must be a string at least 1 character long"
+                )
 
-        # if password is not None and (
-        #     not len(password) > 0 or not isinstance(password, str)
-        # ):
-        #     raise MayimError(
-        #         "password: must be a string at least 1 character long"
-        #     )
+        if password is not None and (
+            not len(password) > 0 or not isinstance(password, str)
+        ):
+            raise MayimError(
+                "password: must be a string at least 1 character long"
+            )
 
         self._dsn = dsn
         self._host = host

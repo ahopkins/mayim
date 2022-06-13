@@ -1,7 +1,7 @@
 import re
 
 from mayim.exception import MayimError
-from mayim.query.sql import SQLQuery, ParamType
+from mayim.query.sql import ParamType, SQLQuery
 
 
 class PostgresQuery(SQLQuery):

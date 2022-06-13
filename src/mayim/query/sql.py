@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from .base import Query
 from enum import Enum, auto
+
+from .base import Query
 
 
 class ParamType(Enum):

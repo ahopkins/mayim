@@ -1,7 +1,7 @@
 from mayim import Mayim, PostgresExecutor, sql
 from mayim.query.postgres import PostgresQuery
-from .app.model import Item
 
+from .app.model import Item
 
 EXPECTED = PostgresQuery(
     """SELECT *

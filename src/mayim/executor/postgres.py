@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-
 from inspect import isawaitable
 from typing import Optional, Type
-from mayim.query.postgres import PostgresQuery
 
 from mayim.exception import RecordNotFound
+from mayim.query.postgres import PostgresQuery
+
 from .sql import SQLExecutor
 
 try:

@@ -11,8 +11,8 @@ from mayim.exception import MayimError
 from mayim.hydrator import Hydrator
 from mayim.interface.base import BaseInterface
 from mayim.interface.lazy import LazyPool
-from mayim.registry import Registry
 from mayim.query.base import Query
+from mayim.registry import Registry
 
 T = TypeVar("T", bound=Query)
 

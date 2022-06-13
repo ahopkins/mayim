@@ -5,10 +5,9 @@ from inspect import getmembers, isfunction, signature
 from pathlib import Path
 from typing import Optional, Type, get_args, get_origin
 
-
 from mayim.convert import convert_sql_params
 from mayim.exception import MayimError
-from mayim.query.sql import SQLQuery, ParamType
+from mayim.query.sql import ParamType, SQLQuery
 from mayim.registry import LazySQLRegistry
 
 from .base import Executor, is_auto_exec

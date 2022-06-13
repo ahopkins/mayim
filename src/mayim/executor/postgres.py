@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from inspect import isawaitable
-from typing import Any, Dict, Optional, Sequence, Type
+from typing import Any, Dict, Optional, Sequence
 
-from mayim.exception import RecordNotFound
 from mayim.query.postgres import PostgresQuery
 
 from .sql import SQLExecutor
@@ -19,38 +17,6 @@ except ModuleNotFoundError:
 class PostgresExecutor(SQLExecutor):
     ENABLED = POSTGRES_ENABLED
     QUERY_CLASS = PostgresQuery
-
-    async def _execute(
-        self,
-        query: str,
-        name: str = "",
-        model: Optional[Type[object]] = None,
-        as_list: bool = False,
-        posargs: Optional[Sequence[Any]] = None,
-        keyargs: Optional[Dict[str, Any]] = None,
-    ):
-        no_result = False
-        if model is None:
-            model, _ = self._context.get()
-        if model is None:
-            no_result = True
-        factory = self.hydrator._make(model)
-        raw = await self._run_sql(
-            query=query,
-            name=name,
-            as_list=as_list,
-            no_result=no_result,
-            posargs=posargs,
-            keyargs=keyargs,
-        )
-        if no_result:
-            return None
-        if not raw:
-            raise RecordNotFound("not found")
-        results = factory(raw)
-        if isawaitable(results):
-            results = await results
-        return results
 
     async def _run_sql(
         self,

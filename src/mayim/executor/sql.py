@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from functools import wraps
-from inspect import getmembers, isfunction, signature
+from inspect import getmembers, isawaitable, isfunction, signature
 from pathlib import Path
 from typing import Any, Dict, Optional, Sequence, Type, get_args, get_origin
 
 from mayim.convert import convert_sql_params
-from mayim.exception import MayimError
+from mayim.exception import MayimError, RecordNotFound
 from mayim.query.sql import ParamType, SQLQuery
 from mayim.registry import LazySQLRegistry
 
@@ -16,6 +16,7 @@ from .base import Executor, is_auto_exec
 class SQLExecutor(Executor[SQLQuery]):
     ENABLED: bool = False
     QUERY_CLASS = SQLQuery
+    _filename_prefix: str = "mayim_"
 
     def execute(
         self,
@@ -45,7 +46,28 @@ class SQLExecutor(Executor[SQLQuery]):
         posargs: Optional[Sequence[Any]] = None,
         keyargs: Optional[Dict[str, Any]] = None,
     ):
-        ...
+        no_result = False
+        if model is None:
+            model, _ = self._context.get()
+        if model is None:
+            no_result = True
+        factory = self.hydrator._make(model)
+        raw = await self._run_sql(
+            query=query,
+            name=name,
+            as_list=as_list,
+            no_result=no_result,
+            posargs=posargs,
+            keyargs=keyargs,
+        )
+        if no_result:
+            return None
+        if not raw:
+            raise RecordNotFound("not found")
+        results = factory(raw)
+        if isawaitable(results):
+            results = await results
+        return results
 
     def run_sql(
         self,
@@ -93,16 +115,16 @@ class SQLExecutor(Executor[SQLQuery]):
         for name, func in getmembers(cls):
             query = LazySQLRegistry.get(cls.__name__, name)
 
+            filename = name
             if cls._isoperation(func):
                 ignore = False
-                filename = name
             elif (
                 isfunction(func)
                 and not any(hasattr(base, name) for base in cls.__bases__)
                 and not name.startswith("_")
             ):
                 ignore = True
-                filename = f"mayim_{filename}"
+                filename = f"{cls._filename_prefix}{filename}"
             else:
                 continue
 

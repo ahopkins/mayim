@@ -3,27 +3,35 @@ from __future__ import annotations
 from functools import wraps
 from inspect import getmembers, isfunction, signature
 from pathlib import Path
-from typing import Optional, Type, get_args, get_origin
-
+from typing import Any, Optional, Sequence, Type, get_args, get_origin
 
 from mayim.convert import convert_sql_params
 from mayim.exception import MayimError
+from mayim.query.sql import ParamType, SQLQuery
 from mayim.registry import LazySQLRegistry
 
-from .base import Executor, Query, is_auto_exec
+from .base import Executor, is_auto_exec
 
 
-class SQLExecutor(Executor):
+class SQLExecutor(Executor[SQLQuery]):
+    ENABLED: bool = False
+    QUERY_CLASS = SQLQuery
+
     def execute(
         self,
         query: str,
         model: Optional[Type[object]] = None,
         as_list: bool = False,
+        posargs: Optional[Sequence[Any]] = None,
         **values,
     ):
         query = convert_sql_params(query)
         return self._execute(
-            query=query, model=model, as_list=as_list, **values
+            query=query,
+            model=model,
+            as_list=as_list,
+            posargs=posargs,
+            **values,
         )
 
     async def _execute(
@@ -31,6 +39,7 @@ class SQLExecutor(Executor):
         query: str,
         model: Optional[Type[object]] = None,
         as_list: bool = False,
+        posargs: Optional[Sequence[Any]] = None,
         **values,
     ):
         ...
@@ -39,6 +48,7 @@ class SQLExecutor(Executor):
         self,
         query: str = "",
         as_list: bool = False,
+        posargs: Optional[Sequence[Any]] = None,
         **values,
     ):
         if query:
@@ -47,13 +57,16 @@ class SQLExecutor(Executor):
             _, query_name = self._context.get()
             # TODO:
             # - Fixed for positional
-            query = (self._queries[query_name]).query
-        return self._run_sql(query=query, as_list=as_list, **values)
+            query = (self._queries[query_name]).text
+        return self._run_sql(
+            query=query, as_list=as_list, posargs=posargs, **values
+        )
 
     async def _run_sql(
         self,
         query: str,
         as_list: bool = False,
+        posargs: Optional[Sequence[Any]] = None,
         **values,
     ):
         ...
@@ -86,7 +99,9 @@ class SQLExecutor(Executor):
             path = base_path / f"{filename}.sql"
 
             try:
-                cls._queries[name] = Query(cls._load_sql(query, path), True)
+                cls._queries[name] = cls.QUERY_CLASS(
+                    cls._load_sql(query, path)
+                )
             except FileNotFoundError:
                 if auto_exec or ignore:
                     ...
@@ -149,21 +164,26 @@ class SQLExecutor(Executor):
                     values = {**bound.arguments}
                     values.pop("self", None)
 
-                    if query.named_args:
+                    if query.param_type is ParamType.KEYWORD:
                         results = await self._execute(
-                            query.query,
+                            query.text,
                             model=model,
                             as_list=as_list,
                             **values,
                         )
+                    elif query.param_type is ParamType.POSITIONAL:
+                        results = await self._execute(
+                            query.text,
+                            model=model,
+                            as_list=as_list,
+                            posargs=list(values.values()),
+                        )
                     else:
-                        raise Exception("POSITIONAL")
-                        # results = await self._execute(
-                        #     query.query,
-                        #     model=model,
-                        #     as_list=as_list,
-                        #     *values.values(),
-                        # )
+                        results = await self._execute(
+                            query.text,
+                            model=model,
+                            as_list=as_list,
+                        )
 
                     if model is None:
                         return None

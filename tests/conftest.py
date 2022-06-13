@@ -55,4 +55,8 @@ def FooExecutor():
         async def select_something(self) -> Foo:
             ...
 
+        @classmethod
+        def _load(cls):
+            cls._loaded = True
+
     return FooExecutor

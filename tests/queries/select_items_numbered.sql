@@ -1,0 +1,3 @@
+SELECT *
+FROM items
+LIMIT $1 OFFSET $2;

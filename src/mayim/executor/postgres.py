@@ -4,13 +4,21 @@ from __future__ import annotations
 from inspect import isawaitable
 from typing import Optional, Type
 
-from psycopg.rows import dict_row
 
 from mayim.exception import RecordNotFound
 from .sql import SQLExecutor
 
+try:
+    from psycopg.rows import dict_row
+
+    POSTGRES_ENABLED = True
+except ModuleNotFoundError:
+    POSTGRES_ENABLED = False
+
 
 class PostgresExecutor(SQLExecutor):
+    ENABLED = POSTGRES_ENABLED
+
     async def _execute(
         self,
         query: str,

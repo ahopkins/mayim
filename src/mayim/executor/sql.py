@@ -14,6 +14,8 @@ from .base import Executor, Query, is_auto_exec
 
 
 class SQLExecutor(Executor):
+    ENABLED: bool = False
+
     def execute(
         self,
         query: str,

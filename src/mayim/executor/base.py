@@ -29,12 +29,18 @@ class Executor:
     _fallback_pool: Optional[BaseInterface]
     _loaded: bool = False
     path: Optional[Union[str, Path]] = None
+    ENABLED: bool = True
 
     def __init__(
         self,
         pool: Optional[BaseInterface] = None,
         hydrator: Optional[Hydrator] = None,
     ) -> None:
+        if not self.ENABLED:
+            raise MayimError(
+                f"Cannot instantiate {self.__class__.__name__}. "
+                "Perhaps you have a missing dependency?"
+            )
         pool = pool or getattr(self.__class__, "_fallback_pool", None)
         if not pool:
             pool = LazyPool()

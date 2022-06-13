@@ -1,16 +1,21 @@
 from __future__ import annotations
-
-
 from inspect import isawaitable
 from typing import Optional, Type
-
-from asyncmy.cursors import DictCursor
 
 from mayim.exception import RecordNotFound
 from .sql import SQLExecutor
 
+try:
+    from asyncmy.cursors import DictCursor
+
+    MYSQL_ENABLED = True
+except ModuleNotFoundError:
+    MYSQL_ENABLED = False
+
 
 class MysqlExecutor(SQLExecutor):
+    ENABLED = MYSQL_ENABLED
+
     async def _execute(
         self,
         query: str,

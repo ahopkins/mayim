@@ -118,7 +118,7 @@ class Executor(Generic[T]):
                     break
             if not name:
                 raise MayimError(
-                    "Could not find query. Please specific a name"
+                    "Could not find hydrator. Please specific a name"
                 )
         return self._hydrators.get(name, self.hydrator)
 

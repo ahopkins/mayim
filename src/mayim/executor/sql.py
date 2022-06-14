@@ -51,9 +51,7 @@ class SQLExecutor(Executor[SQLQuery]):
             model, _ = self._context.get()
         if model is None:
             no_result = True
-        hydrator = self.hydrator
-        if found := self._hydrators.get(name):
-            hydrator = found
+        hydrator = self._hydrators.get(name, self.hydrator)
         factory = hydrator._make(model)
         raw = await self._run_sql(
             query=query,

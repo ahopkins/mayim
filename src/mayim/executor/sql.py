@@ -116,7 +116,7 @@ class SQLExecutor(Executor[SQLQuery]):
             query = LazySQLRegistry.get(cls.__name__, name)
 
             filename = name
-            if cls._isoperation(func):
+            if cls.is_operation(func):
                 ignore = False
             elif (
                 isfunction(func)
@@ -133,7 +133,7 @@ class SQLExecutor(Executor[SQLQuery]):
 
             try:
                 cls._queries[name] = cls.QUERY_CLASS(
-                    cls._load_sql(query, path)
+                    name, cls._load_sql(query, path)
                 )
             except FileNotFoundError:
                 if auto_exec or ignore:
@@ -142,17 +142,21 @@ class SQLExecutor(Executor[SQLQuery]):
                 setattr(cls, name, cls._setup(func))
         cls._loaded = True
 
-    @staticmethod
-    def _isoperation(obj):
+    @classmethod
+    def is_operation(cls, obj):
         """Check if the object is a method that starts with get_ or create_"""
         if isfunction(obj):
-            return (
-                obj.__name__.startswith("select_")
-                or obj.__name__.startswith("insert_")
-                or obj.__name__.startswith("update_")
-                or obj.__name__.startswith("delete_")
-            )
+            return cls.is_query_name(obj.__name__)
         return False
+
+    @staticmethod
+    def is_query_name(name: str):
+        return (
+            name.startswith("select_")
+            or name.startswith("insert_")
+            or name.startswith("update_")
+            or name.startswith("delete_")
+        )
 
     @staticmethod
     def _load_sql(query: Optional[str], path: Path):

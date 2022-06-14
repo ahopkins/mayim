@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from ast import AsyncFunctionDef, Constant, Expr, FunctionDef, Pass, parse
 from contextvars import ContextVar
-from inspect import cleandoc, getdoc, getmodule, getsource
+from inspect import cleandoc, getdoc, getmodule, getsource, stack
 from pathlib import Path
 from textwrap import dedent
 from typing import (
@@ -97,9 +97,25 @@ class Executor(Generic[T]):
             f"{self.__class__.__name__} does not define run_sql"
         )
 
+    def get_query(self, name: Optional[str] = None) -> T:
+        if not name:
+            for frame in stack():
+                if self.is_query_name(frame.function):
+                    name = frame.function
+                    break
+            if not name:
+                raise MayimError(
+                    "Could not find query. Please specific a name"
+                )
+        return self._queries[name]
+
     @classmethod
     def _load(cls) -> None:
         ...
+
+    @staticmethod
+    def is_query_name(obj) -> bool:
+        return False
 
     @staticmethod
     def _setup(func):

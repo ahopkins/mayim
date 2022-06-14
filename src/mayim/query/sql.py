@@ -16,17 +16,21 @@ class SQLQuery(Query):
     text: str
     param_type: ParamType
 
-    def __init__(self, text: str) -> None:
-        ...
+    def __init__(self, name: str, text: str) -> None:
+        self.name = name
+        self.text = text
 
     def __str__(self) -> str:
         return (
-            f"<{self.__class__.__name__} text={self.text[:6]}... "
-            f"param_type={self.param_type}>"
+            f"<{self.__class__.__name__} name={self.name} "
+            f"text={self.text[:6]}... param_type={self.param_type}>"
         )
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(text={self.text[:6]}...)"
+        return (
+            f"{self.__class__.__name__}(name={self.name} "
+            f"text={self.text[:6]}...)"
+        )
 
     def __eq__(self, other: object) -> bool:
         return (

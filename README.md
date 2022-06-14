@@ -1,5 +1,3 @@
-⚠️ This project is still in **ALPHA DEVELOPMENT**. Your [thoughts and opinions](https://github.com/ahopkins/mayim/discussions) are always appreciated.
-
 # Mayim
 
 > The *NOT* ORM Python hydrator

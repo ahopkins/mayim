@@ -18,7 +18,7 @@ The `Mayim` class takes a few parameters.
 - `executors`: a list of `Executor` classes or instances
 - `dsn`: the DSN to a DB instance (instead of `pool`)
 - `pool`: a connection pool (instead of `dsn`)
-- `hydrator`: a custom fallback hydrator
+- `hydrator`: a custom fallback hydrator (optional)
 
 ## What is an `Executor`?
 
@@ -26,10 +26,10 @@ We will get into it in [more detail later](executors), but the `Executor` is the
 
 You need to:
 
-- subclass `Executor` or more likely `PostgresExecutor`;
-- create method definitions that match the names of your SQL statements;
+- subclass `Executor` (more likely you want one of its subclasses: `PostgresExecutor` or `MysqlExecutor`);
+- create method definitions that match the names of your SQL statements (yes, those methods will likely be empty);
 - name the arguments that will be injected into the query; and
-- provide the model you want to be returned as the return annotation.
+- provide the model you want to be returned as the return annotation (or annotate it as a `Dict` if that is what you want back).
 
 
 ```python

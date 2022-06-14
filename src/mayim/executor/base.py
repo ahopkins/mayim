@@ -78,7 +78,7 @@ class Executor(Generic[T]):
         model: Optional[Type[object]] = None,
         as_list: bool = False,
         posargs: Optional[Sequence[Any]] = None,
-        keyargs: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
     ):
 
         raise NotImplementedError(
@@ -92,7 +92,7 @@ class Executor(Generic[T]):
         as_list: bool = False,
         no_result: bool = False,
         posargs: Optional[Sequence[Any]] = None,
-        keyargs: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
     ):
         raise NotImplementedError(
             f"{self.__class__.__name__} does not define run_sql"

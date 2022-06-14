@@ -25,12 +25,12 @@ class MysqlExecutor(SQLExecutor):
         as_list: bool = False,
         no_result: bool = False,
         posargs: Optional[Sequence[Any]] = None,
-        keyargs: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
     ):
         method_name = self._get_method(as_list=as_list)
         async with self.pool.connection() as conn:
             async with conn.cursor(cursor=DictCursor) as cursor:
-                exec_values = list(posargs) if posargs else keyargs
+                exec_values = list(posargs) if posargs else params
                 await cursor.execute(query, exec_values)
                 if no_result:
                     return None

@@ -41,8 +41,7 @@ LIMIT $limit OFFSET $offset;
 # basic.py
 import asyncio
 from typing import List
-from mayim import Mayim
-from mayim.executor import Executor
+from mayim import Mayim, PostgresExecutor
 from dataclasses import dataclass
 
 
@@ -55,19 +54,16 @@ class City:
     population: int
 
 
-class CityExecutor(Executor):
+class CityExecutor(PostgresExecutor):
     async def select_all_cities(
-        self, limit: int = 25, offset: int = 0
+        self, limit: int = 4, offset: int = 0
     ) -> List[City]:
         ...
 
 
 async def run():
-    Mayim(
-        executors=[CityExecutor],
-        dsn="postgres://postgres:postgres@localhost:5432/world"
-    )
     executor = CityExecutor()
+    Mayim(dsn="postgres://postgres:postgres@localhost:5432/world")
     print(await executor.select_all_cities())
 
 

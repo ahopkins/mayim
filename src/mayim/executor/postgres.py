@@ -25,11 +25,11 @@ class PostgresExecutor(SQLExecutor):
         as_list: bool = False,
         no_result: bool = False,
         posargs: Optional[Sequence[Any]] = None,
-        keyargs: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
     ):
         method_name = self._get_method(as_list=as_list)
         async with self.pool.connection() as conn:
-            exec_values = list(posargs) if posargs else keyargs
+            exec_values = list(posargs) if posargs else params
             cursor = await conn.execute(query, exec_values)
             if no_result:
                 return None

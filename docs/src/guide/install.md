@@ -1,6 +1,6 @@
 # Installation
 
-*Currently, Mayim only works with Postgres, support for more data sources will come in the future*
+Mayim supports both **Postgres** and **MySQL**. More data sources may be included in the future.
 
 You can install Mayim using PIP:
 
@@ -25,4 +25,21 @@ Or, as a convenience:
 
 ```
 pip install mayim[postgres]
+```
+
+## MySQL
+
+Dependencies:
+- [asyncmy](https://github.com/long2ice/asyncmy)
+
+Either install it independently:
+
+```
+pip install asyncmy
+```
+
+Or, as a convenience:
+
+```
+pip install mayim[mysql]
 ```

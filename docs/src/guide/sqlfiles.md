@@ -48,7 +48,7 @@ How about changing the name of the directory from `./queries` to `./path/to/sql`
 ├── path
 │   └── to
 │       └── sql
-│           └── select_all_cities.sql
+│           └── select_something.sql
 └── my_executor.py
 ```
 
@@ -69,6 +69,8 @@ Mayim will look SQL files that start with one of the four (4) SQL verbs:
 - `update_<something>.sql`
 - `delete_<something>.sql`
 
+As you can see, usually you will simply name your methods and the SQL files the same.
+
 **Make sure you name your files properly.**
 
 But, what if none of these names work for you? Mayim will also load any SQL files that are prefixed with a known prefix, for example: `mayim_<something>.sql`. Just note, if you do this then the `mayim_` prefix is pulled off of the method name.
@@ -85,6 +87,8 @@ class MyExecutor(PostgresExecutor):
     async def something(self) -> Something:
         ...
 ```
+
+In this case, Mayim sees that there is a method named: `something`. Therefore, it will look for `mayim_something.sql`.
 
 ## Parameter injection
 
@@ -107,6 +111,13 @@ class CityExecutor(PostgresExecutor):
 
 Notice how the `limit` and `offset` arguments in the method will be translated into `$limit` and `$offset` respectively.
 
-::: warning
-Because of the custom `$named` argument syntax, you might find that these queries do not run in other SQL clients. Support for native parameter patterns is coming.
-:::
+Alternatively, you can use a positional style of query arguments:
+
+```sql
+SELECT *
+FROM city
+LIMIT $1
+OFFSET $2;
+```
+
+If you do this, you will need to make sure that the order of the method arguments correspond to the positional numbers being used.

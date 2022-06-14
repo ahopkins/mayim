@@ -64,6 +64,10 @@ async def run():
     mayim.load(executors=[product_executor, vendor_executor])
 ```
 
+### Implied registration
+
+On the frontpage example, we instantiated our executor before calling `Mayim`, and **never** explicitly loaded the class (or instance). This is fine *only if it is instantiated before the `Mayim` object*. Because of this "gotcha", this implied registration option is not the recommended approach.
+
 
 ### Global registration with `@register`
 
@@ -135,20 +139,23 @@ class ItemExecutor(PostgresExecutor):
 
 ## Dynamic queries and raw `execute`
 
-What if you need to generate some SQL query and not use one that is predefined? Mayim provides access to a lower-level API for this purpose. You should pass your generated SQL query to `execute`.
+What if you need to generate some SQL and not use a predefined query? Mayim provides access to a lower-level API for this purpose. You should pass your generated SQL query to `execute`.
 
 ```python
 class CityExecutor(PostgresExecutor):
-    async def select_city_by_id(self, city_id: int) -> City:
+    async def select_city(self, ident: int | str, by_id: bool) -> City:
         query = """
             SELECT *
             FROM city
-            WHERE id = $city_id
         """
-        return await self.execute(query, city_id=city_id, as_list=False)
+        if by_id:
+            query += "WHERE id = $ident"
+        else:
+            query += "WHERE name = $ident"
+        return await self.execute(query, as_list=False, params={"ident": ident})
 ```
 
-*FYI - `as_list` defaults to `False`. It is shown here just as an example that you may need to be explicit about passing this argument if you expect to return a `list`*
+*FYI - `as_list` defaults to `False`. It is shown here just as an example that you may need to be explicit about passing this argument if you expect to return a `list`. Once you have dropped down into executing your own code, you are responsible for telling Mayim if it needs to return a `list` or a single instance.*
 
 ## Low level `run_sql`
 
@@ -157,16 +164,15 @@ What if you need are not sure at run time what model to return? What if you need
 ```python
 class CityExecutor(PostgresExecutor):
     async def select_city_by_id(self, city_id: int):
-        query = """
-            SELECT *
-            FROM city
-            WHERE id = $city_id
-        """
-        results = await self.run_sql(query, city_id=city_id, as_list=False)
+        query = self.get_query()
+        results = await self.run_sql(query.text, params={"city_id": city_id})
         return self.hydrator.hydrate(results, City)
 ```
 
-*FYI - `as_list` defaults to `False`. It is shown here just as an example that you may need to be explicit about passing this argument if you expect to return a `list`*
+
+## Fetching query
+
+In the previous example, you may have noticed `query = self.get_query()`. This method allows you to fetch the predefined query that *would* have been executed. It is helpful in cases where you need to add some more custom logic to your method, but still want to preload your SQL from a `.sql` file.
 
 ## Custom pools
 
@@ -204,4 +210,47 @@ class CityExecutor(Executor):
 async def run():
     city_executor = CityExecutor(hydrator=CityHydrator())
     Mayim(executors=[city_executor], ...)
+```
+
+### Method specific hydrator
+
+You can also define a hydrator that will only be used for a single method. This is done by wrapping the method with the `@hydrator` decorator as shown here
+
+```python
+from mayim import Mayim, Executor, Hydrator, hydrator
+
+class HydratorA(Hydrator):
+    ...
+
+class HydratorB(Hydrator):
+   ...
+
+class SomeExecuto(Executor):
+    async def select_a(...) -> Something:
+        ...
+
+    @hydrator(HydratorB())
+    async def select_b(...) -> Something:
+        ...
+
+Mayim(executors=[SomeExecutor(hydrator=HydratorA())])
+```
+
+### Fetching hydrators
+
+Just like you can use `self.get_query()` to have access to the SQL that would run for a method, you can use `self.get_hydrator()` similarly. Let's rewrite that earlier example with a method-specific hydrator.
+
+```python
+from mayim import Mayim, PostgresExecutor, Hydrator, hydrator
+
+class CityHydrator(Hydrator):
+    ...
+
+class CityExecutor(PostgresExecutor):
+    @hydrator(CityHydrator())
+    async def select_city_by_id(self, city_id: int) -> List[City]:
+        query = self.get_query()
+        hydrator = self.get_hydrator()
+        results = await self.run_sql(query.text, params={"city_id": city_id})
+        return [hydrator.hydrate(city, City) for city in results]
 ```

@@ -6,7 +6,7 @@ A `Hydrator` is an object that is responsible for turning raw data into a **sing
 instance = model(**data)
 ```
 
-Mayim makes it easy, however, if you need to support other types of models, or add other business logic to the hydration process.
+If you need to support other types of models, or add other business logic to the hydration process, then you can create custom hydrators.
 
 ## For an Executor
 

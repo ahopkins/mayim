@@ -25,7 +25,7 @@ class SQLExecutor(Executor[SQLQuery]):
         model: Optional[Type[object]] = None,
         as_list: bool = False,
         posargs: Optional[Sequence[Any]] = None,
-        keyargs: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
     ):
         query = convert_sql_params(query)
         return self._execute(
@@ -34,7 +34,7 @@ class SQLExecutor(Executor[SQLQuery]):
             model=model,
             as_list=as_list,
             posargs=posargs,
-            keyargs=keyargs,
+            params=params,
         )
 
     async def _execute(
@@ -44,7 +44,7 @@ class SQLExecutor(Executor[SQLQuery]):
         model: Optional[Type[object]] = None,
         as_list: bool = False,
         posargs: Optional[Sequence[Any]] = None,
-        keyargs: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
     ):
         no_result = False
         if model is None:
@@ -59,7 +59,7 @@ class SQLExecutor(Executor[SQLQuery]):
             as_list=as_list,
             no_result=no_result,
             posargs=posargs,
-            keyargs=keyargs,
+            params=params,
         )
         if no_result:
             return None
@@ -77,7 +77,7 @@ class SQLExecutor(Executor[SQLQuery]):
         as_list: bool = False,
         no_result: bool = False,
         posargs: Optional[Sequence[Any]] = None,
-        keyargs: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
     ):
         if query:
             query = convert_sql_params(query)
@@ -91,7 +91,7 @@ class SQLExecutor(Executor[SQLQuery]):
             as_list=as_list,
             no_result=no_result,
             posargs=posargs,
-            keyargs=keyargs,
+            params=params,
         )
 
     async def _run_sql(
@@ -101,7 +101,7 @@ class SQLExecutor(Executor[SQLQuery]):
         as_list: bool = False,
         no_result: bool = False,
         posargs: Optional[Sequence[Any]] = None,
-        keyargs: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
     ):
         ...
 
@@ -207,8 +207,8 @@ class SQLExecutor(Executor[SQLQuery]):
                     query = self._queries[name]
                     bound = sig.bind(self, *args, **kwargs)
                     bound.apply_defaults()
-                    keyargs = {**bound.arguments}
-                    keyargs.pop("self", None)
+                    params = {**bound.arguments}
+                    params.pop("self", None)
 
                     if query.param_type is ParamType.KEYWORD:
                         results = await self._execute(
@@ -216,14 +216,14 @@ class SQLExecutor(Executor[SQLQuery]):
                             model=model,
                             name=name,
                             as_list=as_list,
-                            keyargs=keyargs,
+                            params=params,
                         )
                     elif query.param_type is ParamType.POSITIONAL:
                         results = await self._execute(
                             query.text,
                             model=model,
                             as_list=as_list,
-                            posargs=list(keyargs.values()),
+                            posargs=list(params.values()),
                         )
                     else:
                         results = await self._execute(

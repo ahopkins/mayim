@@ -36,6 +36,7 @@ class Executor(Generic[T]):
     _fallback_hydrator: Hydrator
     _fallback_pool: Optional[BaseInterface]
     _loaded: bool = False
+    _hydrators: Dict[str, Hydrator]
     path: Optional[Union[str, Path]] = None
     ENABLED: bool = True
     QUERY_CLASS: Type[T]
@@ -108,6 +109,18 @@ class Executor(Generic[T]):
                     "Could not find query. Please specific a name"
                 )
         return self._queries[name]
+
+    def get_hydrator(self, name: Optional[str] = None) -> Hydrator:
+        if not name:
+            for frame in stack():
+                if self.is_query_name(frame.function):
+                    name = frame.function
+                    break
+            if not name:
+                raise MayimError(
+                    "Could not find query. Please specific a name"
+                )
+        return self._hydrators.get(name, self.hydrator)
 
     @classmethod
     def _load(cls) -> None:

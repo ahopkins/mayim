@@ -1,6 +1,6 @@
 from inspect import cleandoc
-from mayim.hydrator.base import Hydrator
 
+from mayim.hydrator.base import Hydrator
 from mayim.registry import LazyHydratorRegistry, LazySQLRegistry, Registry
 
 

@@ -1,4 +1,4 @@
-from .decorator import register, sql, hydrator
+from .decorator import hydrator, register, sql
 from .executor import Executor
 from .executor.mysql import MysqlExecutor
 from .executor.postgres import PostgresExecutor

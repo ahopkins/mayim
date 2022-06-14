@@ -1,20 +1,22 @@
 from mayim import Mayim, PostgresExecutor, sql
 from mayim.query.postgres import PostgresQuery
-from mayim.query.sql import ParamType
+from mayim.query.sql import ParamType, SQLQuery
 
 from .app.model import Item
 
 EXPECTED_KEYWORD = PostgresQuery(
+    "expected",
     """SELECT *
 FROM items
 LIMIT %(limit)s OFFSET %(offset)s;
-"""
+""",
 )
 EXPECTED_POSITIONAL = PostgresQuery(
+    "expected",
     """SELECT *
 FROM items
 LIMIT %s OFFSET %s;
-"""
+""",
 )
 
 
@@ -124,3 +126,33 @@ async def test_sql_decorator_positional(postgres_connection):
         "items", "otheritems"
     ).strip()
     postgres_connection.execute.assert_called_with(query_text, [10, 40])
+
+
+async def test_get_query_by_name():
+    class ItemExecutor(PostgresExecutor):
+        async def select_items(
+            self, limit: int = 4, offset: int = 0
+        ) -> SQLQuery:
+            return self.get_query("select_items")
+
+    Mayim(executors=[ItemExecutor], dsn="foo://user:password@host:1234/db")
+    executor = Mayim.get(ItemExecutor)
+    query = await executor.select_items()
+
+    assert isinstance(query, PostgresQuery)
+    assert query.name == "select_items"
+
+
+async def test_get_query_by_call_stack():
+    class ItemExecutor(PostgresExecutor):
+        async def select_items(
+            self, limit: int = 4, offset: int = 0
+        ) -> SQLQuery:
+            return self.get_query()
+
+    Mayim(executors=[ItemExecutor], dsn="foo://user:password@host:1234/db")
+    executor = Mayim.get(ItemExecutor)
+    query = await executor.select_items()
+
+    assert isinstance(query, PostgresQuery)
+    assert query.name == "select_items"

@@ -8,7 +8,7 @@ from typing import Any, Dict, Optional, Sequence, Type, get_args, get_origin
 from mayim.convert import convert_sql_params
 from mayim.exception import MayimError, RecordNotFound
 from mayim.query.sql import ParamType, SQLQuery
-from mayim.registry import LazySQLRegistry
+from mayim.registry import LazyHydratorRegistry, LazySQLRegistry
 
 from .base import Executor, is_auto_exec
 
@@ -51,7 +51,8 @@ class SQLExecutor(Executor[SQLQuery]):
             model, _ = self._context.get()
         if model is None:
             no_result = True
-        factory = self.hydrator._make(model)
+        hydrator = self._hydrators.get(name, self.hydrator)
+        factory = hydrator._make(model)
         raw = await self._run_sql(
             query=query,
             name=name,
@@ -110,10 +111,14 @@ class SQLExecutor(Executor[SQLQuery]):
     @classmethod
     def _load(cls) -> None:
         cls._queries = {}
+        cls._hydrators = {}
 
         base_path = cls.get_base_path("queries")
         for name, func in getmembers(cls):
             query = LazySQLRegistry.get(cls.__name__, name)
+            hydrator = LazyHydratorRegistry.get(cls.__name__, name)
+            if hydrator:
+                cls._hydrators[name] = hydrator
 
             filename = name
             if cls.is_operation(func):

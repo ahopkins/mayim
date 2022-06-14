@@ -1,4 +1,4 @@
-from .decorator import register, sql
+from .decorator import hydrator, register, sql
 from .executor import Executor
 from .executor.mysql import MysqlExecutor
 from .executor.postgres import PostgresExecutor
@@ -11,6 +11,7 @@ __all__ = (
     "Mayim",
     "MysqlExecutor",
     "PostgresExecutor",
+    "hydrator",
     "register",
     "sql",
 )

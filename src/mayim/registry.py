@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, DefaultDict, Dict, Optional, Type, Union
 
 if TYPE_CHECKING:
     from mayim.executor import Executor
+    from mayim.hydrator import Hydrator
 
 
 class Registry(dict):
@@ -44,3 +45,25 @@ class LazySQLRegistry:
     @classmethod
     def get(cls, class_name: str, method_name: str) -> Optional[str]:
         return cls()._queries.get(class_name, {}).get(method_name, None)
+
+
+class LazyHydratorRegistry:
+    _singleton = None
+    _hydrators: DefaultDict[str, Dict[str, Hydrator]]
+
+    def __new__(cls, *args, **kwargs):
+        if cls._singleton is None:
+            cls._singleton = super().__new__(cls)
+            cls._singleton._hydrators = defaultdict(dict)
+        return cls._singleton
+
+    @classmethod
+    def add(
+        cls, class_name: str, method_name: str, hydrator: Hydrator
+    ) -> None:
+        instance = cls()
+        instance._hydrators[class_name][method_name] = hydrator
+
+    @classmethod
+    def get(cls, class_name: str, method_name: str) -> Optional[Hydrator]:
+        return cls()._hydrators.get(class_name, {}).get(method_name, None)

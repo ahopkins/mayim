@@ -1,10 +1,9 @@
 from typing import Optional, Sequence, Type, Union
 
-
 from mayim import Executor, Hydrator, Mayim
+from mayim.exception import MayimError
 from mayim.interface.base import BaseInterface
 from mayim.registry import InterfaceRegistry, Registry
-from mayim.exception import MayimError
 
 try:
     from sanic.log import logger

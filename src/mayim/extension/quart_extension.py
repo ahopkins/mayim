@@ -1,13 +1,19 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Sequence, Type, Union
+from typing import Optional, Sequence, Type, Union
 
 from mayim import Executor, Hydrator, Mayim
+from mayim.exception import MayimError
 from mayim.interface.base import BaseInterface
 from mayim.registry import InterfaceRegistry, Registry
 
-if TYPE_CHECKING:
+try:
     from quart import Quart
+
+    QUART_INSTALLED = True
+except ModuleNotFoundError:
+    QUART_INSTALLED = False
+    Quart = type("Quart", (), {})  # type: ignore
 
 
 class QuartMayimExtension:
@@ -20,7 +26,13 @@ class QuartMayimExtension:
         dsn: str = "",
         hydrator: Optional[Hydrator] = None,
         pool: Optional[BaseInterface] = None,
+        app: Optional[Quart] = None,
     ):
+        if not QUART_INSTALLED:
+            raise MayimError(
+                "Could not locate Quart. It must be installed to use "
+                "QuartMayimExtension. Try: pip install quart"
+            )
         self.executors = executors or []
         for executor in self.executors:
             Registry().register(executor)
@@ -29,6 +41,8 @@ class QuartMayimExtension:
             "hydrator": hydrator,
             "pool": pool,
         }
+        if app is not None:
+            self.init_app(app)
 
     def init_app(self, app: Quart) -> None:
         @app.while_serving

@@ -19,10 +19,6 @@ class SanicMayimExtension(Extension):
         hydrator: Optional[Hydrator] = None,
         pool: Optional[BaseInterface] = None,
     ):
-        # raise NotImplementedError(
-        #     "This is a placeholder feature and will not be released until "
-        #     "sometime after June 2022."
-        # )
         self.executors = executors or []
         for executor in self.executors:
             Registry().register(executor)

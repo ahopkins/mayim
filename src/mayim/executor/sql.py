@@ -7,6 +7,7 @@ from typing import Any, Dict, Optional, Sequence, Type, get_args, get_origin
 
 from mayim.convert import convert_sql_params
 from mayim.exception import MayimError, RecordNotFound
+from mayim.interface.lazy import LazyPool
 from mayim.query.sql import ParamType, SQLQuery
 from mayim.registry import LazyHydratorRegistry, LazySQLRegistry
 
@@ -202,6 +203,11 @@ class SQLExecutor(Executor[SQLQuery]):
         def decorator(f):
             @wraps(f)
             async def decorated_function(self: SQLExecutor, *args, **kwargs):
+                if isinstance(self.pool, LazyPool):
+                    raise MayimError(
+                        "Connection pool to your database has not been setup. "
+                        "For more information, please see: ____."
+                    )
                 self._context.set((model, name))
                 if auto_exec:
                     query = self._queries[name]

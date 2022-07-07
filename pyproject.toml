@@ -18,10 +18,12 @@ include_trailing_comma = true
 
 [[tool.mypy.overrides]]
 module = [
-    "psycopg.*",
+    "asyncmy.*",
     "psycopg_pool.*",
+    "psycopg.*",
+    "quart.*",
     "sanic_ext.*",
-    "asyncmy.*"
+    "sanic.*"
 ]
 ignore_missing_imports = true
 

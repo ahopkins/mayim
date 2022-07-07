@@ -4,6 +4,7 @@ from typing import Optional
 from urllib.parse import urlparse
 
 from mayim.exception import MayimError
+from mayim.registry import InterfaceRegistry
 
 UrlMapping = namedtuple("UrlMapping", ("key", "cast"))
 
@@ -89,6 +90,7 @@ class BaseInterface(ABC):
         self._populate_connection_args()
         self._populate_dsn()
         self._setup_pool()
+        InterfaceRegistry.add(self)
 
     def __str__(self) -> str:
         return f"<{self.__class__.__name__} {self.dsn}>"

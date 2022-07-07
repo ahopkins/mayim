@@ -1,3 +1,4 @@
+from asyncio import get_running_loop
 from inspect import isclass
 from typing import Optional, Sequence, Type, TypeVar, Union
 
@@ -25,7 +26,13 @@ class Mayim:
             raise MayimError("Conflict with pool and DSN")
 
         if not pool and dsn:
-            pool = PostgresPool(dsn)
+            try:
+                get_running_loop()
+            except RuntimeError:
+                pool = LazyPool(dsn=dsn)
+                pool.set_derivative(PostgresPool)
+            else:
+                pool = PostgresPool(dsn=dsn)
 
         if not executors:
             executors = []
@@ -88,3 +95,13 @@ class Mayim:
                 continue
 
             executor._load()
+
+    async def connect(self) -> None:
+        registry = Registry()
+        to_derive = {
+            executor
+            for executor in registry.values()
+            if isinstance(executor.pool, LazyPool)
+        }
+        for executor in to_derive:
+            executor._pool = executor.pool.derive()

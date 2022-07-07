@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from collections import defaultdict
 from inspect import isclass
-from typing import TYPE_CHECKING, DefaultDict, Dict, Optional, Type, Union
+from typing import TYPE_CHECKING, DefaultDict, Dict, Optional, Set, Type, Union
 
 if TYPE_CHECKING:
     from mayim.executor import Executor
     from mayim.hydrator import Hydrator
+    from mayim.interface.base import BaseInterface
 
 
 class Registry(dict):
@@ -25,6 +26,25 @@ class Registry(dict):
     @classmethod
     def reset(cls):
         cls._singleton = super().__new__(cls)  # type: ignore
+
+
+class InterfaceRegistry:
+    _singleton = None
+    _interfaces: Set[BaseInterface]
+
+    def __new__(cls, *args, **kwargs):
+        if cls._singleton is None:
+            cls._singleton = super().__new__(cls)
+            cls._singleton._interfaces = set()
+        return cls._singleton
+
+    @classmethod
+    def add(cls, interface: BaseInterface) -> None:
+        instance = cls()
+        instance._interfaces.add(interface)
+
+    def __iter__(self):
+        return iter(self._interfaces)
 
 
 class LazySQLRegistry:

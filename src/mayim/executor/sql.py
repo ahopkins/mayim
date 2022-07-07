@@ -206,7 +206,6 @@ class SQLExecutor(Executor[SQLQuery]):
                 if isinstance(self.pool, LazyPool):
                     raise MayimError(
                         "Connection pool to your database has not been setup. "
-                        "For more information, please see: ____."
                     )
                 self._context.set((model, name))
                 if auto_exec:

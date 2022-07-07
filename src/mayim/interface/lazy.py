@@ -1,8 +1,8 @@
 from typing import AsyncContextManager, Optional, Type
-from mayim.exception import MayimError
 
 from psycopg import AsyncConnection
 
+from mayim.exception import MayimError
 from mayim.interface.base import BaseInterface
 
 

@@ -1,8 +1,9 @@
 from typing import Optional, Sequence, Type, Union
 
+from sanic.log import logger
 from sanic_ext import Extend
 from sanic_ext.extensions.base import Extension
-from sanic.log import logger
+
 from mayim import Executor, Hydrator, Mayim
 from mayim.interface.base import BaseInterface
 from mayim.registry import InterfaceRegistry, Registry

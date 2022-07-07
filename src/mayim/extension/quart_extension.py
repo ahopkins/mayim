@@ -6,7 +6,6 @@ from mayim import Executor, Hydrator, Mayim
 from mayim.interface.base import BaseInterface
 from mayim.registry import InterfaceRegistry, Registry
 
-
 if TYPE_CHECKING:
     from quart import Quart
 

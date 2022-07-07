@@ -42,5 +42,4 @@ class LazyPool(BaseInterface):
     def derive(self) -> BaseInterface:
         if not self._derivative:
             raise MayimError("No interface available to derive")
-        print(self.full_dsn)
         return self._derivative(dsn=self.full_dsn)

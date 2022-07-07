@@ -1,14 +1,17 @@
-from typing import Optional, Sequence, Type, Union
+from __future__ import annotations
 
-from sanic_ext import Extend
-from sanic_ext.extensions.base import Extension
-from sanic.log import logger
+from typing import TYPE_CHECKING, Optional, Sequence, Type, Union
+
 from mayim import Executor, Hydrator, Mayim
 from mayim.interface.base import BaseInterface
 from mayim.registry import InterfaceRegistry, Registry
 
 
-class SanicMayimExtension(Extension):
+if TYPE_CHECKING:
+    from quart import Quart
+
+
+class QuartMayimExtension:
     name = "mayim"
 
     def __init__(
@@ -28,29 +31,14 @@ class SanicMayimExtension(Extension):
             "pool": pool,
         }
 
-    def startup(self, bootstrap: Extend) -> None:
-        @self.app.before_server_start
-        async def setup(_):
+    def init_app(self, app: Quart) -> None:
+        @app.while_serving
+        async def lifespan():
             Mayim(executors=self.executors, **self.mayim_kwargs)
             for interface in InterfaceRegistry():
-                logger.info(f"Opening {interface}")
                 await interface.open()
 
-        @self.app.after_server_stop
-        async def shutdown(_):
+            yield
+
             for interface in InterfaceRegistry():
-                logger.info(f"Closing {interface}")
                 await interface.close()
-
-        for executor in Registry().values():
-            if isinstance(executor, Executor):
-                bootstrap.dependency(executor)
-            else:
-                bootstrap.add_dependency(
-                    executor, lambda *_: Mayim.get(executor)
-                )
-
-    def render_label(self):
-        length = len(Registry())
-        s = "" if length == 1 else "s"
-        return f"[{length} executor{s}]"

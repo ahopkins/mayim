@@ -8,7 +8,7 @@ from mayim.hydrator import Hydrator
 from mayim.interface.base import BaseInterface
 from mayim.interface.lazy import LazyPool
 from mayim.interface.postgres import PostgresPool
-from mayim.registry import Registry
+from mayim.registry import InterfaceRegistry, Registry
 
 T = TypeVar("T", bound=Executor)
 
@@ -29,8 +29,9 @@ class Mayim:
             try:
                 get_running_loop()
             except RuntimeError:
-                pool = LazyPool(dsn=dsn)
+                pool = LazyPool()
                 pool.set_derivative(PostgresPool)
+                pool.set_dsn(dsn)
             else:
                 pool = PostgresPool(dsn=dsn)
 
@@ -105,3 +106,10 @@ class Mayim:
         }
         for executor in to_derive:
             executor._pool = executor.pool.derive()
+
+        for interface in InterfaceRegistry():
+            await interface.open()
+
+    async def disconnect(self) -> None:
+        for interface in InterfaceRegistry():
+            await interface.close()

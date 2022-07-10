@@ -96,11 +96,13 @@ class BaseInterface(ABC):
         return f"<{self.__class__.__name__} {self.dsn}>"
 
     def _populate_connection_args(self):
-        parts = urlparse(self.dsn or "")
-        for key, mapping in URLPARSE_MAPPING.items():
-            if not getattr(self, mapping.key):
-                value = getattr(parts, key)  # or TODO: make defaults
-                setattr(self, mapping.key, mapping.cast(value))
+        dsn = self.dsn or ""
+        if dsn:
+            parts = urlparse(dsn)
+            for key, mapping in URLPARSE_MAPPING.items():
+                if not getattr(self, mapping.key):
+                    value = getattr(parts, key, None)  # or TODO: make defaults
+                    setattr(self, mapping.key, mapping.cast(value))
 
     def _populate_dsn(self):
         self._dsn = (

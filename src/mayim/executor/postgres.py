@@ -1,6 +1,8 @@
 from __future__ import annotations
+from contextlib import asynccontextmanager
 
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Coroutine, Dict, Optional, Sequence
+from mayim.exception import MayimError
 
 from mayim.query.postgres import PostgresQuery
 
@@ -39,3 +41,16 @@ class PostgresExecutor(SQLExecutor):
 
     def _get_method(self, as_list: bool):
         return "fetchall" if as_list else "fetchone"
+
+    @asynccontextmanager
+    async def transaction(self):
+        async with self.pool.connection() as conn:
+            self.pool._connection.set(conn)
+            yield conn.transaction()
+            self.pool._connection.set(None)
+
+    def rollback(self) -> Coroutine[Any, Any, Any]:
+        existing = self.pool._connection.get(None)
+        if not existing:
+            raise MayimError("Cannot rollback non-existing transaction")
+        return existing.rollback()

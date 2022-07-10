@@ -106,6 +106,9 @@ class SQLExecutor(Executor[SQLQuery]):
     ):
         ...
 
+    def transaction(self):
+        ...
+
     def _get_method(self, as_list: bool):
         ...
 

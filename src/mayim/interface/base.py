@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from collections import namedtuple
-from typing import Optional
+from contextvars import ContextVar
+from typing import Any, Optional
 from urllib.parse import urlparse
 
 from mayim.exception import MayimError
@@ -86,6 +87,7 @@ class BaseInterface(ABC):
         self._password = password
         self._db = db
         self._full_dsn: Optional[str] = None
+        self._connection: ContextVar[Any] = ContextVar("connection")
 
         self._populate_connection_args()
         self._populate_dsn()

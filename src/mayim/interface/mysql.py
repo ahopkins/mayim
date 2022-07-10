@@ -1,4 +1,5 @@
-from typing import AsyncContextManager, Optional
+from contextlib import asynccontextmanager
+from typing import AsyncIterator, Optional
 
 import asyncmy
 
@@ -24,7 +25,19 @@ class MysqlPool(BaseInterface):
         self._pool.close()
         await self._pool.wait_closed()
 
-    def connection(
+    @asynccontextmanager
+    async def connection(
         self, timeout: Optional[float] = None
-    ) -> AsyncContextManager[asyncmy.contexts._PoolAcquireContextManager]:
-        return self._pool.acquire()
+    ) -> AsyncIterator[asyncmy.Connection]:
+        existing = self.existing_connection()
+        if existing:
+            yield existing
+        else:
+            transaction = self.in_transaction()
+            async with self._pool.acquire() as conn:
+                if transaction:
+                    await conn.begin()
+                yield conn
+                if transaction:
+                    if self.do_commit():
+                        await conn.commit()

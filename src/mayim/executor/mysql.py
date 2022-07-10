@@ -36,6 +36,3 @@ class MysqlExecutor(SQLExecutor):
                     return None
                 raw = await getattr(cursor, method_name)()
                 return raw
-
-    def _get_method(self, as_list: bool):
-        return "fetchall" if as_list else "fetchone"

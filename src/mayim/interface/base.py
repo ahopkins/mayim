@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from contextvars import ContextVar
-from typing import Any, Optional
+from typing import Any, Optional, Set, Type
 from urllib.parse import urlparse
 
 from mayim.exception import MayimError
@@ -21,6 +23,10 @@ URLPARSE_MAPPING = {
 
 class BaseInterface(ABC):
     scheme = "dummy"
+    registered_interfaces: Set[Type[BaseInterface]] = set()
+
+    def __init_subclass__(cls) -> None:
+        BaseInterface.registered_interfaces.add(cls)
 
     @abstractmethod
     def _setup_pool(self):

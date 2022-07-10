@@ -1,6 +1,9 @@
 from unittest.mock import AsyncMock
 
 from mayim import Mayim, register
+from mayim.executor.base import Executor
+from mayim.interface.mysql import MysqlPool
+from mayim.interface.postgres import PostgresPool
 from mayim.registry import Registry
 
 
@@ -117,3 +120,13 @@ def test_register(FooExecutor):
     cls = register(FooExecutor)
     assert cls is FooExecutor
     assert len(Registry()) == 1
+
+
+def test_fallback_to_postgres(FooExecutor):
+    Mayim(dsn="postgres://user:password@host:1234/db")
+    assert Executor._fallback_pool._derivative is PostgresPool
+
+
+def test_fallback_to_mysql(FooExecutor):
+    Mayim(dsn="mysql://user:password@host:1234/db")
+    assert Executor._fallback_pool._derivative is MysqlPool

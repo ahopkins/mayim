@@ -8,6 +8,8 @@ from mayim.interface.base import BaseInterface
 
 
 class MysqlPool(BaseInterface):
+    scheme = "mysql"
+
     def __init__(
         self,
         dsn: Optional[str] = None,

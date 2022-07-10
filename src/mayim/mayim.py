@@ -1,6 +1,7 @@
 from asyncio import get_running_loop
 from inspect import isclass
 from typing import Optional, Sequence, Type, TypeVar, Union
+from urllib.parse import urlparse
 
 from mayim.exception import MayimError
 from mayim.executor import Executor
@@ -11,6 +12,7 @@ from mayim.interface.postgres import PostgresPool
 from mayim.registry import Registry
 
 T = TypeVar("T", bound=Executor)
+DEFAULT_INTERFACE = PostgresPool
 
 
 class Mayim:
@@ -26,13 +28,14 @@ class Mayim:
             raise MayimError("Conflict with pool and DSN")
 
         if not pool and dsn:
+            pool_type = self._get_pool_type(dsn)
             try:
                 get_running_loop()
             except RuntimeError:
                 pool = LazyPool(dsn=dsn)
-                pool.set_derivative(PostgresPool)
+                pool.set_derivative(pool_type)
             else:
-                pool = PostgresPool(dsn=dsn)
+                pool = pool_type(dsn=dsn)
 
         if not executors:
             executors = []
@@ -95,6 +98,13 @@ class Mayim:
                 continue
 
             executor._load()
+
+    def _get_pool_type(self, dsn: str) -> Type[BaseInterface]:
+        parts = urlparse(dsn)
+        for interface_type in BaseInterface.registered_interfaces:
+            if parts.scheme == interface_type.scheme:
+                return interface_type
+        return DEFAULT_INTERFACE
 
     async def connect(self) -> None:
         registry = Registry()

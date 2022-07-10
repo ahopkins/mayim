@@ -34,8 +34,7 @@ class InterfaceRegistry:
 
     def __new__(cls, *args, **kwargs):
         if cls._singleton is None:
-            cls._singleton = super().__new__(cls)
-            cls._singleton._interfaces = set()
+            cls.reset()
         return cls._singleton
 
     @classmethod
@@ -46,6 +45,11 @@ class InterfaceRegistry:
     def __iter__(self):
         return iter(self._interfaces)
 
+    @classmethod
+    def reset(cls):
+        cls._singleton = super().__new__(cls)
+        cls._singleton._interfaces = set()
+
 
 class LazySQLRegistry:
     _singleton = None
@@ -53,8 +57,7 @@ class LazySQLRegistry:
 
     def __new__(cls, *args, **kwargs):
         if cls._singleton is None:
-            cls._singleton = super().__new__(cls)
-            cls._singleton._queries = defaultdict(dict)
+            cls.reset()
         return cls._singleton
 
     @classmethod
@@ -66,6 +69,11 @@ class LazySQLRegistry:
     def get(cls, class_name: str, method_name: str) -> Optional[str]:
         return cls()._queries.get(class_name, {}).get(method_name, None)
 
+    @classmethod
+    def reset(cls):
+        cls._singleton = super().__new__(cls)
+        cls._singleton._queries = defaultdict(dict)
+
 
 class LazyHydratorRegistry:
     _singleton = None
@@ -73,8 +81,7 @@ class LazyHydratorRegistry:
 
     def __new__(cls, *args, **kwargs):
         if cls._singleton is None:
-            cls._singleton = super().__new__(cls)
-            cls._singleton._hydrators = defaultdict(dict)
+            cls.reset()
         return cls._singleton
 
     @classmethod
@@ -87,3 +94,8 @@ class LazyHydratorRegistry:
     @classmethod
     def get(cls, class_name: str, method_name: str) -> Optional[Hydrator]:
         return cls()._hydrators.get(class_name, {}).get(method_name, None)
+
+    @classmethod
+    def reset(cls):
+        cls._singleton = super().__new__(cls)
+        cls._singleton._hydrators = defaultdict(dict)

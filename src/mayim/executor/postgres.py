@@ -1,9 +1,9 @@
 from __future__ import annotations
+
 from contextlib import asynccontextmanager
-
 from typing import Any, Coroutine, Dict, Optional, Sequence
-from mayim.exception import MayimError
 
+from mayim.exception import MayimError
 from mayim.query.postgres import PostgresQuery
 
 from .sql import SQLExecutor

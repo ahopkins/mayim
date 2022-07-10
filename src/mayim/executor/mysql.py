@@ -1,9 +1,9 @@
 from __future__ import annotations
+
 from contextlib import asynccontextmanager
-
 from typing import Any, Dict, Optional, Sequence
-from mayim.exception import MayimError
 
+from mayim.exception import MayimError
 from mayim.query.mysql import MysqlQuery
 
 from .sql import SQLExecutor

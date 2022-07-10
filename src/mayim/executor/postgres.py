@@ -36,6 +36,3 @@ class PostgresExecutor(SQLExecutor):
             cursor.row_factory = dict_row
             raw = await getattr(cursor, method_name)()
             return raw
-
-    async def _rollback(self, existing) -> None:
-        await existing.rollback()

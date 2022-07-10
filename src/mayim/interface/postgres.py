@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from typing import AsyncContextManager, Optional
+from typing import AsyncIterator, Optional
 
 from psycopg import AsyncConnection
 from psycopg_pool import AsyncConnectionPool
@@ -19,14 +19,13 @@ class PostgresPool(BaseInterface):
     async def close(self):
         await self._pool.close()
 
-    def connection(
+    @asynccontextmanager
+    async def connection(
         self, timeout: Optional[float] = None
-    ) -> AsyncContextManager[AsyncConnection]:
+    ) -> AsyncIterator[AsyncConnection]:
         existing = self._connection.get(None)
         if existing:
-            return self._yield_existing(existing)
-        return self._pool.connection(timeout=timeout)
-
-    @asynccontextmanager
-    async def _yield_existing(self, existing: AsyncConnection):
-        yield existing
+            yield existing
+        else:
+            async with self._pool.connection(timeout=timeout) as conn:
+                yield conn

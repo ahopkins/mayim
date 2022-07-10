@@ -36,6 +36,3 @@ class MysqlExecutor(SQLExecutor):
                     return None
                 raw = await getattr(cursor, method_name)()
                 return raw
-
-    async def _rollback(self, _) -> None:
-        self.pool._commit.set(False)  # type: ignore

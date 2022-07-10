@@ -93,7 +93,13 @@ class BaseInterface(ABC):
         self._password = password
         self._db = db
         self._full_dsn: Optional[str] = None
-        self._connection: ContextVar[Any] = ContextVar("connection")
+        self._connection: ContextVar[Any] = ContextVar(
+            "connection", default=None
+        )
+        self._transaction: ContextVar[bool] = ContextVar(
+            "transaction", default=False
+        )
+        self._commit: ContextVar[bool] = ContextVar("commit", default=True)
 
         self._populate_connection_args()
         self._populate_dsn()
@@ -158,3 +164,12 @@ class BaseInterface(ABC):
     @property
     def full_dsn(self):
         return self._full_dsn
+
+    def existing_connection(self):
+        return self._connection.get()
+
+    def in_transaction(self) -> bool:
+        return self._transaction.get()
+
+    def do_commit(self) -> bool:
+        return self._commit.get()

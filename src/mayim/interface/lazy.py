@@ -1,6 +1,5 @@
-from typing import AsyncContextManager, Optional, Type
+from typing import Optional, Type
 
-from psycopg import AsyncConnection
 
 from mayim.exception import MayimError
 from mayim.interface.base import BaseInterface
@@ -32,9 +31,7 @@ class LazyPool(BaseInterface):
     async def close(self):
         ...
 
-    def connection(
-        self, timeout: Optional[float] = None
-    ) -> AsyncContextManager[AsyncConnection]:
+    def connection(self, timeout: Optional[float] = None):
         ...
 
     def set_derivative(self, interface_class: Type[BaseInterface]) -> None:

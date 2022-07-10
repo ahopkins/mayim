@@ -1,4 +1,5 @@
 from __future__ import annotations
+from contextlib import asynccontextmanager
 
 from functools import wraps
 from inspect import getmembers, isawaitable, isfunction, signature
@@ -106,11 +107,24 @@ class SQLExecutor(Executor[SQLQuery]):
     ):
         ...
 
-    def transaction(self):
+    async def rollback(self) -> None:
+        existing = self.pool._connection.get(None)
+        if not existing:
+            raise MayimError("Cannot rollback non-existing transaction")
+        await self._rollback(existing)
+
+    async def _rollback(self, existing) -> None:
         ...
 
-    def _get_method(self, as_list: bool):
-        ...
+    @asynccontextmanager
+    async def transaction(self):
+        async with self.pool.connection() as conn:
+            self.pool._connection.set(conn)
+            yield
+            self.pool._connection.set(None)
+
+    def _get_method(self, as_list: bool) -> str:
+        return "fetchall" if as_list else "fetchone"
 
     @classmethod
     def _load(cls) -> None:

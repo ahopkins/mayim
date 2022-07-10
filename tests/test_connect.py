@@ -1,7 +1,8 @@
+import pytest
+
+from mayim import Mayim
 from mayim.interface.lazy import LazyPool
 from mayim.interface.postgres import PostgresPool
-from mayim import Mayim
-import pytest
 
 
 @pytest.fixture

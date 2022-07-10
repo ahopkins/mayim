@@ -56,7 +56,7 @@ def postgres_connection_context(postgres_connection):
 
 @pytest.fixture(autouse=True)
 def mock_postgres_pool(monkeypatch, postgres_connection_context):
-    pool = Mock()
+    pool = AsyncMock()
     mock = MagicMock(return_value=pool)
     pool.connection = postgres_connection_context
     monkeypatch.setattr(postgres, "AsyncConnectionPool", mock)

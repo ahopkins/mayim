@@ -153,7 +153,7 @@ class SQLExecutor(Executor[SQLQuery]):
 
     @classmethod
     def is_operation(cls, obj):
-        """Check if the object is a method that starts with get_ or create_"""
+        """Check if the object is a method that starts with a query prefix."""
         if isfunction(obj):
             return cls.is_query_name(obj.__name__)
         return False

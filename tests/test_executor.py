@@ -60,6 +60,21 @@ async def test_empty_result_none_optional(postgres_connection):
     assert result is None
 
 
+async def test_empty_result_none_optional_list(postgres_connection):
+    postgres_connection.result = None
+
+    class ItemExecutor(PostgresExecutor):
+        @sql("SELECT * FROM otheritems")
+        async def select_items(self) -> Optional[List[int]]:
+            ...
+
+    Mayim(executors=[ItemExecutor], dsn="foo://user:password@host:1234/db")
+    executor = Mayim.get(ItemExecutor)
+
+    result = await executor.select_items()
+    assert result is None
+
+
 @pytest.mark.skipif(
     sys.version_info < (3, 10), reason="Requires 3.10 style annotations"
 )

@@ -84,10 +84,10 @@ class SQLExecutor(Executor[SQLQuery]):
         if no_result:
             return None
         if not raw:
-            if as_list:
-                return []
             if allow_none:
                 return None
+            if as_list:
+                return []
             raise RecordNotFound(
                 f"Query <{name}> did not find any record using "
                 f"{posargs or ()} and {params or {}}"

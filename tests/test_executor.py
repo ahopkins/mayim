@@ -1,5 +1,5 @@
 import re
-from typing import List
+from typing import List, Optional
 
 import pytest
 
@@ -42,6 +42,36 @@ async def test_empty_result_multiple(postgres_connection):
 
     result = await executor.select_items()
     assert result == []
+
+
+async def test_empty_result_none_optional(postgres_connection):
+    postgres_connection.result = None
+
+    class ItemExecutor(PostgresExecutor):
+        @sql("SELECT * FROM otheritems")
+        async def select_items(self) -> Optional[int]:
+            ...
+
+    Mayim(executors=[ItemExecutor], dsn="foo://user:password@host:1234/db")
+    executor = Mayim.get(ItemExecutor)
+
+    result = await executor.select_items()
+    assert result is None
+
+
+async def test_empty_result_none_union(postgres_connection):
+    postgres_connection.result = None
+
+    class ItemExecutor(PostgresExecutor):
+        @sql("SELECT * FROM otheritems")
+        async def select_items(self) -> int | None:
+            ...
+
+    Mayim(executors=[ItemExecutor], dsn="foo://user:password@host:1234/db")
+    executor = Mayim.get(ItemExecutor)
+
+    result = await executor.select_items()
+    assert result is None
 
 
 def test_missing_sql_not_strict():

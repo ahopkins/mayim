@@ -4,7 +4,17 @@ from contextlib import asynccontextmanager
 from functools import wraps
 from inspect import getmembers, isawaitable, isfunction, signature
 from pathlib import Path
-from typing import Any, Dict, Optional, Sequence, Type, get_args, get_origin
+from types import UnionType
+from typing import (
+    Any,
+    Dict,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+    get_args,
+    get_origin,
+)
 
 from mayim.convert import convert_sql_params
 from mayim.exception import MayimError, MissingSQL, RecordNotFound
@@ -26,6 +36,7 @@ class SQLExecutor(Executor[SQLQuery]):
         name: str = "",
         model: Optional[Type[object]] = None,
         as_list: bool = False,
+        allow_none: bool = False,
         posargs: Optional[Sequence[Any]] = None,
         params: Optional[Dict[str, Any]] = None,
     ):
@@ -35,6 +46,7 @@ class SQLExecutor(Executor[SQLQuery]):
             name=name,
             model=model,
             as_list=as_list,
+            allow_none=allow_none,
             posargs=posargs,
             params=params,
         )
@@ -45,6 +57,7 @@ class SQLExecutor(Executor[SQLQuery]):
         name: str = "",
         model: Optional[Type[object]] = None,
         as_list: bool = False,
+        allow_none: bool = False,
         posargs: Optional[Sequence[Any]] = None,
         params: Optional[Dict[str, Any]] = None,
     ):
@@ -68,6 +81,8 @@ class SQLExecutor(Executor[SQLQuery]):
         if not raw:
             if as_list:
                 return []
+            if allow_none:
+                return None
             raise RecordNotFound(
                 f"Query <{name}> did not find any record using "
                 f"{posargs or ()} and {params or {}}"
@@ -222,20 +237,33 @@ class SQLExecutor(Executor[SQLQuery]):
         auto_exec = is_auto_exec(func)
         model = sig.return_annotation
         as_list = False
+        allow_none = False
         name = func.__name__
 
         if model is not None and (origin := get_origin(model)):
-            as_list = bool(origin is list)
-            as_dict = bool(origin is dict)
-            if as_list:
-                model = get_args(model)[0]
-            elif as_dict:
-                model = dict
-            else:
-                raise MayimError(
-                    f"{func} must return either a model or a list of models. "
-                    "eg. -> Foo or List[Foo]"
-                )
+            check_model = True
+            if origin is UnionType or origin is Union:
+                args = get_args(model)
+                allow_none = True
+                none_type = type(None)
+                if len(args) == 2 and any(arg is none_type for arg in args):
+                    model = args[0] if args[1] is none_type else args[1]
+                    origin = get_origin(model)
+                    if not origin:
+                        check_model = False
+
+            if check_model:
+                as_list = bool(origin is list)
+                as_dict = bool(origin is dict)
+                if as_list:
+                    model = get_args(model)[0]
+                elif as_dict:
+                    model = dict
+                else:
+                    raise MayimError(
+                        f"{func} must return either a model or a list of "
+                        "models. eg. -> Foo or List[Foo]"
+                    )
 
         def decorator(f):
             @wraps(f)
@@ -258,6 +286,7 @@ class SQLExecutor(Executor[SQLQuery]):
                             model=model,
                             name=name,
                             as_list=as_list,
+                            allow_none=allow_none,
                             params=params,
                         )
                     elif query.param_type is ParamType.POSITIONAL:
@@ -265,6 +294,7 @@ class SQLExecutor(Executor[SQLQuery]):
                             query.text,
                             model=model,
                             as_list=as_list,
+                            allow_none=allow_none,
                             posargs=list(params.values()),
                         )
                     else:
@@ -272,6 +302,7 @@ class SQLExecutor(Executor[SQLQuery]):
                             query.text,
                             model=model,
                             as_list=as_list,
+                            allow_none=allow_none,
                         )
 
                     if model is None:

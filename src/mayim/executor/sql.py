@@ -65,7 +65,12 @@ class SQLExecutor(Executor[SQLQuery]):
         if no_result:
             return None
         if not raw:
-            raise RecordNotFound("not found")
+            if as_list:
+                return []
+            raise RecordNotFound(
+                f"Query <{name}> did not find any record using "
+                f"{posargs or ()} and {params or {}}"
+            )
         results = factory(raw)
         if isawaitable(results):
             results = await results

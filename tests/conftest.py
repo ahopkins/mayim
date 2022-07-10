@@ -13,6 +13,12 @@ class PostgresConnectionMock:
     def __init__(self):
         self.result = {"foo": "bar"}
 
+    async def fetchall(self):
+        return self.result
+
+    async def fetchone(self):
+        return self.result
+
     async def __aenter__(self, *args, **kwargs):
         return self
 

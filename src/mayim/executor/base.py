@@ -77,6 +77,7 @@ class Executor(Generic[T]):
         name: str = "",
         model: Optional[Type[object]] = None,
         as_list: bool = False,
+        allow_none: bool = False,
         posargs: Optional[Sequence[Any]] = None,
         params: Optional[Dict[str, Any]] = None,
     ):

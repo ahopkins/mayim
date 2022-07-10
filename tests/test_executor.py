@@ -1,4 +1,5 @@
 import re
+import sys
 from typing import List, Optional
 
 import pytest
@@ -59,6 +60,9 @@ async def test_empty_result_none_optional(postgres_connection):
     assert result is None
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 10), reason="Requires 3.10 style annotations"
+)
 async def test_empty_result_none_union(postgres_connection):
     postgres_connection.result = None
 

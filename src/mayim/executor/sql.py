@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from functools import wraps
 from inspect import getmembers, isawaitable, isfunction, signature
 from pathlib import Path
-from types import UnionType
+import sys
 from typing import (
     Any,
     Dict,
@@ -23,6 +23,11 @@ from mayim.query.sql import ParamType, SQLQuery
 from mayim.registry import LazyHydratorRegistry, LazySQLRegistry
 
 from .base import Executor, is_auto_exec
+
+if sys.version_info < (3, 10):
+    UnionType = type("UnionType", (), {})
+else:
+    from types import UnionType
 
 
 class SQLExecutor(Executor[SQLQuery]):

@@ -6,6 +6,8 @@ from mayim.interface.base import BaseInterface
 
 
 class MysqlPool(BaseInterface):
+    scheme = "mysql"
+
     def _setup_pool(self):
         self._pool = asyncmy.create_pool(
             user=self.user,

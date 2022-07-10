@@ -1,8 +1,7 @@
 from contextlib import asynccontextmanager
 from typing import AsyncIterator, Optional
+
 from mayim.exception import MayimError
-
-
 from mayim.interface.base import BaseInterface
 
 try:

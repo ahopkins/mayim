@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from typing import AsyncIterator, Optional
+
 from mayim.exception import MayimError
-
-
 from mayim.interface.base import BaseInterface
 
 try:
-    from asyncmy import create_pool, Connection
+    from asyncmy import Connection, create_pool
 
     MYSQL_ENABLED = True
 except ModuleNotFoundError:

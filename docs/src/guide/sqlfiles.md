@@ -65,7 +65,7 @@ class MyExecutor(PostgresExecutor):
 Mayim will look SQL files that start with one of the four (4) SQL verbs:
 
 - `select_<something>.sql`
-- `create_<something>.sql`
+- `insert_<something>.sql`
 - `update_<something>.sql`
 - `delete_<something>.sql`
 

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import sys
 from contextlib import asynccontextmanager
 from functools import wraps
 from inspect import getmembers, isawaitable, isfunction, signature
 from pathlib import Path
-import sys
 from typing import (
     Any,
     Dict,

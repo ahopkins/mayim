@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Sequence, Type, get_args, get_origin
 
 from mayim.convert import convert_sql_params
-from mayim.exception import MayimError, RecordNotFound
+from mayim.exception import MayimError, MissingSQL, RecordNotFound
 from mayim.interface.lazy import LazyPool
 from mayim.query.sql import ParamType, SQLQuery
 from mayim.registry import LazyHydratorRegistry, LazySQLRegistry
@@ -142,7 +142,7 @@ class SQLExecutor(Executor[SQLQuery]):
                 self.pool._commit.set(True)
 
     @classmethod
-    def _load(cls) -> None:
+    def _load(cls, strict: bool) -> None:
         cls._queries = {}
         cls._hydrators = {}
 
@@ -174,8 +174,13 @@ class SQLExecutor(Executor[SQLQuery]):
                     name, cls._load_sql(query, path)
                 )
             except FileNotFoundError:
-                if auto_exec or ignore:
-                    ...
+                if ignore:
+                    continue
+                if auto_exec and strict:
+                    raise MissingSQL(
+                        f"Could not find SQL for {cls.__name__}.{name}. "
+                        f"Looked for file named: {path}"
+                    )
             else:
                 setattr(cls, name, cls._setup(func))
         cls._loaded = True

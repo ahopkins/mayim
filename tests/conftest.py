@@ -70,7 +70,7 @@ def FooExecutor():
             ...
 
         @classmethod
-        def _load(cls):
+        def _load(cls, _):
             cls._loaded = True
 
     return FooExecutor

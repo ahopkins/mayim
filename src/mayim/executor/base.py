@@ -123,7 +123,7 @@ class Executor(Generic[T]):
         return self._hydrators.get(name, self.hydrator)
 
     @classmethod
-    def _load(cls) -> None:
+    def _load(cls, strict: bool) -> None:
         ...
 
     @staticmethod

@@ -23,6 +23,7 @@ class Mayim:
         dsn: str = "",
         hydrator: Optional[Hydrator] = None,
         pool: Optional[BaseInterface] = None,
+        strict: bool = False,
     ):
         if pool and dsn:
             raise MayimError("Conflict with pool and DSN")
@@ -40,6 +41,7 @@ class Mayim:
 
         if not executors:
             executors = []
+        self.strict = strict
         self.load(executors=executors, hydrator=hydrator, pool=pool)
 
         if hydrator is None:
@@ -69,6 +71,7 @@ class Mayim:
         executors: Sequence[Union[Type[Executor], Executor]],
         hydrator: Optional[Hydrator] = None,
         pool: Optional[BaseInterface] = None,
+        strict: Optional[bool] = None,
     ) -> None:
         """
         Look through the Executor definition for methods that should
@@ -78,6 +81,7 @@ class Mayim:
 
         to_load = set(executors)
         to_load.update(Registry().values())
+        strict = strict if strict is not None else self.strict
         for executor in to_load:
             if isclass(executor):
                 try:
@@ -98,7 +102,7 @@ class Mayim:
             if executor._loaded:
                 continue
 
-            executor._load()
+            executor._load(strict)
 
     def _get_pool_type(self, dsn: str) -> Type[BaseInterface]:
         parts = urlparse(dsn)

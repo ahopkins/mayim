@@ -1,6 +1,6 @@
 from __future__ import annotations
-from contextlib import asynccontextmanager
 
+from contextlib import asynccontextmanager
 from functools import wraps
 from inspect import getmembers, isawaitable, isfunction, signature
 from pathlib import Path

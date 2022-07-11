@@ -1,12 +1,19 @@
 from __future__ import annotations
+from logging import getLogger
 
 from typing import Optional, Sequence, Type, Union
 
 from mayim import Executor, Hydrator, Mayim
 from mayim.exception import MayimError
+from mayim.extension.statistics import (
+    display_counters,
+    setup_qry_counter,
+    setup_qry_display,
+)
 from mayim.interface.base import BaseInterface
 from mayim.registry import InterfaceRegistry, Registry
 
+logger = getLogger("quart.app")
 try:
     from quart import Quart
 
@@ -14,6 +21,27 @@ try:
 except ModuleNotFoundError:
     QUART_INSTALLED = False
     Quart = type("Quart", (), {})  # type: ignore
+
+
+class Default:
+    ...
+
+
+_default = Default()
+
+
+class SQLStatisticsMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            setup_qry_counter()
+        response = await self.app(scope, receive, send)
+        if scope["type"] == "http":
+            setup_qry_display(logger)
+
+        return response
 
 
 class QuartMayimExtension:
@@ -27,6 +55,7 @@ class QuartMayimExtension:
         hydrator: Optional[Hydrator] = None,
         pool: Optional[BaseInterface] = None,
         app: Optional[Quart] = None,
+        counters: Union[Default, bool] = _default,
     ):
         if not QUART_INSTALLED:
             raise MayimError(
@@ -41,6 +70,7 @@ class QuartMayimExtension:
             "hydrator": hydrator,
             "pool": pool,
         }
+        self.counters = counters
         if app is not None:
             self.init_app(app)
 
@@ -55,3 +85,8 @@ class QuartMayimExtension:
 
             for interface in InterfaceRegistry():
                 await interface.close()
+
+        if display_counters(self.counters, self.executors):
+            app.asgi_app = SQLStatisticsMiddleware(  # type: ignore
+                app.asgi_app
+            )

@@ -24,7 +24,7 @@ class SQLCounterMixin(SQLExecutor):
         return super()._run_sql(*args, **kwargs)
 
 
-def display_counters(counters, executors) -> bool:
+def display_statistics(counters, executors) -> bool:
     if isinstance(counters, bool):
         return counters
 
@@ -42,7 +42,7 @@ def setup_qry_counter(*_):
             executor.reset()
 
 
-def setup_qry_display(logger, *_):
+def log_statistics_report(logger, *_):
     COLUMN_SIZE = 6
     registry = Registry()
     statistics = [
@@ -76,7 +76,8 @@ def setup_qry_display(logger, *_):
         if hasattr(executor, "_counter")
     ]
     if not row_data:
-        row_data = ["No executor counters found"]
+        logger.warning("No executor counters found")
+        return
     rows = "\n".join(row_data)
     total_values: DefaultDict[str, int] = defaultdict(int)
     for stats in statistics:

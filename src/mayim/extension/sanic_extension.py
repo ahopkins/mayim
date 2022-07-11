@@ -3,9 +3,9 @@ from typing import Optional, Sequence, Type, Union
 from mayim import Executor, Hydrator, Mayim
 from mayim.exception import MayimError
 from mayim.extension.statistics import (
-    display_counters,
+    display_statistics,
+    log_statistics_report,
     setup_qry_counter,
-    setup_qry_display,
 )
 from mayim.interface.base import BaseInterface
 from mayim.registry import InterfaceRegistry, Registry
@@ -73,12 +73,12 @@ class SanicMayimExtension(Extension):
                 logger.info(f"Closing {interface}")
                 await interface.close()
 
-        if display_counters(self.counters, self.executors):
+        if display_statistics(self.counters, self.executors):
             self.app.on_request(setup_qry_counter)
 
             @self.app.on_response
             async def display(*_):
-                setup_qry_display(logger)
+                log_statistics_report(logger)
 
     def render_label(self):
         length = len(Registry())

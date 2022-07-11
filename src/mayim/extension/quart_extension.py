@@ -6,9 +6,9 @@ from typing import Optional, Sequence, Type, Union
 from mayim import Executor, Hydrator, Mayim
 from mayim.exception import MayimError
 from mayim.extension.statistics import (
-    display_counters,
+    display_statistics,
+    log_statistics_report,
     setup_qry_counter,
-    setup_qry_display,
 )
 from mayim.interface.base import BaseInterface
 from mayim.registry import InterfaceRegistry, Registry
@@ -39,7 +39,7 @@ class SQLStatisticsMiddleware:
             setup_qry_counter()
         response = await self.app(scope, receive, send)
         if scope["type"] == "http":
-            setup_qry_display(logger)
+            log_statistics_report(logger)
 
         return response
 
@@ -86,7 +86,7 @@ class QuartMayimExtension:
             for interface in InterfaceRegistry():
                 await interface.close()
 
-        if display_counters(self.counters, self.executors):
+        if display_statistics(self.counters, self.executors):
             app.asgi_app = SQLStatisticsMiddleware(  # type: ignore
                 app.asgi_app
             )

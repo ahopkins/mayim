@@ -2,10 +2,16 @@ from typing import Optional, Sequence, Type, Union
 
 from mayim import Executor, Hydrator, Mayim
 from mayim.exception import MayimError
+from mayim.extension.statistics import (
+    display_statistics,
+    log_statistics_report,
+    setup_qry_counter,
+)
 from mayim.interface.base import BaseInterface
 from mayim.registry import InterfaceRegistry, Registry
 
 try:
+    from sanic.helpers import Default, _default
     from sanic.log import logger
     from sanic_ext import Extend
     from sanic_ext.extensions.base import Extension
@@ -13,7 +19,6 @@ try:
     SANIC_INSTALLED = True
 except ModuleNotFoundError:
     SANIC_INSTALLED = False
-    logger = object()  # type: ignore
     Extension = type("Extension", (), {})  # type: ignore
     Extend = type("Extend", (), {})  # type: ignore
 
@@ -28,6 +33,7 @@ class SanicMayimExtension(Extension):
         dsn: str = "",
         hydrator: Optional[Hydrator] = None,
         pool: Optional[BaseInterface] = None,
+        counters: Union[Default, bool] = _default,
     ):
         if not SANIC_INSTALLED:
             raise MayimError(
@@ -43,8 +49,17 @@ class SanicMayimExtension(Extension):
             "hydrator": hydrator,
             "pool": pool,
         }
+        self.counters = counters
 
     def startup(self, bootstrap: Extend) -> None:
+        for executor in Registry().values():
+            if isinstance(executor, Executor):
+                bootstrap.dependency(executor)
+            else:
+                bootstrap.add_dependency(
+                    executor, lambda *_: Mayim.get(executor)
+                )
+
         @self.app.before_server_start
         async def setup(_):
             Mayim(executors=self.executors, **self.mayim_kwargs)
@@ -58,13 +73,12 @@ class SanicMayimExtension(Extension):
                 logger.info(f"Closing {interface}")
                 await interface.close()
 
-        for executor in Registry().values():
-            if isinstance(executor, Executor):
-                bootstrap.dependency(executor)
-            else:
-                bootstrap.add_dependency(
-                    executor, lambda *_: Mayim.get(executor)
-                )
+        if display_statistics(self.counters, self.executors):
+            self.app.on_request(setup_qry_counter)
+
+            @self.app.on_response
+            async def display(*_):
+                log_statistics_report(logger)
 
     def render_label(self):
         length = len(Registry())

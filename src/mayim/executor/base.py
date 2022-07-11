@@ -77,6 +77,7 @@ class Executor(Generic[T]):
         name: str = "",
         model: Optional[Type[object]] = None,
         as_list: bool = False,
+        allow_none: bool = False,
         posargs: Optional[Sequence[Any]] = None,
         params: Optional[Dict[str, Any]] = None,
     ):
@@ -123,7 +124,7 @@ class Executor(Generic[T]):
         return self._hydrators.get(name, self.hydrator)
 
     @classmethod
-    def _load(cls) -> None:
+    def _load(cls, strict: bool) -> None:
         ...
 
     @staticmethod

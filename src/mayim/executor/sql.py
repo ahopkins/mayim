@@ -1,18 +1,33 @@
 from __future__ import annotations
 
+import sys
 from contextlib import asynccontextmanager
 from functools import wraps
 from inspect import getmembers, isawaitable, isfunction, signature
 from pathlib import Path
-from typing import Any, Dict, Optional, Sequence, Type, get_args, get_origin
+from typing import (
+    Any,
+    Dict,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+    get_args,
+    get_origin,
+)
 
 from mayim.convert import convert_sql_params
-from mayim.exception import MayimError, RecordNotFound
+from mayim.exception import MayimError, MissingSQL, RecordNotFound
 from mayim.interface.lazy import LazyPool
 from mayim.query.sql import ParamType, SQLQuery
 from mayim.registry import LazyHydratorRegistry, LazySQLRegistry
 
 from .base import Executor, is_auto_exec
+
+if sys.version_info < (3, 10):
+    UnionType = type("UnionType", (), {})
+else:
+    from types import UnionType
 
 
 class SQLExecutor(Executor[SQLQuery]):
@@ -26,6 +41,7 @@ class SQLExecutor(Executor[SQLQuery]):
         name: str = "",
         model: Optional[Type[object]] = None,
         as_list: bool = False,
+        allow_none: bool = False,
         posargs: Optional[Sequence[Any]] = None,
         params: Optional[Dict[str, Any]] = None,
     ):
@@ -35,6 +51,7 @@ class SQLExecutor(Executor[SQLQuery]):
             name=name,
             model=model,
             as_list=as_list,
+            allow_none=allow_none,
             posargs=posargs,
             params=params,
         )
@@ -45,6 +62,7 @@ class SQLExecutor(Executor[SQLQuery]):
         name: str = "",
         model: Optional[Type[object]] = None,
         as_list: bool = False,
+        allow_none: bool = False,
         posargs: Optional[Sequence[Any]] = None,
         params: Optional[Dict[str, Any]] = None,
     ):
@@ -66,6 +84,8 @@ class SQLExecutor(Executor[SQLQuery]):
         if no_result:
             return None
         if not raw:
+            if allow_none:
+                return None
             if as_list:
                 return []
             raise RecordNotFound(
@@ -142,7 +162,7 @@ class SQLExecutor(Executor[SQLQuery]):
                 self.pool._commit.set(True)
 
     @classmethod
-    def _load(cls) -> None:
+    def _load(cls, strict: bool) -> None:
         cls._queries = {}
         cls._hydrators = {}
 
@@ -174,8 +194,13 @@ class SQLExecutor(Executor[SQLQuery]):
                     name, cls._load_sql(query, path)
                 )
             except FileNotFoundError:
-                if auto_exec or ignore:
-                    ...
+                if ignore:
+                    continue
+                if auto_exec and strict:
+                    raise MissingSQL(
+                        f"Could not find SQL for {cls.__name__}.{name}. "
+                        f"Looked for file named: {path}"
+                    )
             else:
                 setattr(cls, name, cls._setup(func))
         cls._loaded = True
@@ -217,20 +242,33 @@ class SQLExecutor(Executor[SQLQuery]):
         auto_exec = is_auto_exec(func)
         model = sig.return_annotation
         as_list = False
+        allow_none = False
         name = func.__name__
 
         if model is not None and (origin := get_origin(model)):
-            as_list = bool(origin is list)
-            as_dict = bool(origin is dict)
-            if as_list:
-                model = get_args(model)[0]
-            elif as_dict:
-                model = dict
-            else:
-                raise MayimError(
-                    f"{func} must return either a model or a list of models. "
-                    "eg. -> Foo or List[Foo]"
-                )
+            check_model = True
+            if origin is UnionType or origin is Union:
+                args = get_args(model)
+                allow_none = True
+                none_type = type(None)
+                if len(args) == 2 and any(arg is none_type for arg in args):
+                    model = args[0] if args[1] is none_type else args[1]
+                    origin = get_origin(model)
+                    if not origin:
+                        check_model = False
+
+            if check_model:
+                as_list = bool(origin is list)
+                as_dict = bool(origin is dict)
+                if as_list:
+                    model = get_args(model)[0]
+                elif as_dict:
+                    model = dict
+                else:
+                    raise MayimError(
+                        f"{func} must return either a model or a list of "
+                        "models. eg. -> Foo or List[Foo]"
+                    )
 
         def decorator(f):
             @wraps(f)
@@ -253,6 +291,7 @@ class SQLExecutor(Executor[SQLQuery]):
                             model=model,
                             name=name,
                             as_list=as_list,
+                            allow_none=allow_none,
                             params=params,
                         )
                     elif query.param_type is ParamType.POSITIONAL:
@@ -260,6 +299,7 @@ class SQLExecutor(Executor[SQLQuery]):
                             query.text,
                             model=model,
                             as_list=as_list,
+                            allow_none=allow_none,
                             posargs=list(params.values()),
                         )
                     else:
@@ -267,6 +307,7 @@ class SQLExecutor(Executor[SQLQuery]):
                             query.text,
                             model=model,
                             as_list=as_list,
+                            allow_none=allow_none,
                         )
 
                     if model is None:

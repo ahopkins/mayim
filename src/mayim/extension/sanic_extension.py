@@ -10,12 +10,11 @@ from mayim.extension.statistics import (
 from mayim.interface.base import BaseInterface
 from mayim.registry import InterfaceRegistry, Registry
 
-
 try:
+    from sanic.helpers import Default, _default
     from sanic.log import logger
     from sanic_ext import Extend
     from sanic_ext.extensions.base import Extension
-    from sanic.helpers import _default, Default
 
     SANIC_INSTALLED = True
 except ModuleNotFoundError:

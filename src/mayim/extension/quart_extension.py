@@ -1,6 +1,6 @@
 from __future__ import annotations
-from logging import getLogger
 
+from logging import getLogger
 from typing import Optional, Sequence, Type, Union
 
 from mayim import Executor, Hydrator, Mayim

@@ -45,8 +45,6 @@ class SQLStatisticsMiddleware:
 
 
 class QuartMayimExtension:
-    name = "mayim"
-
     def __init__(
         self,
         *,

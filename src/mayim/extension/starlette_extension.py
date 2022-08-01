@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from logging import getLogger
+from logging import INFO, Logger, basicConfig, getLogger
 from typing import Optional, Sequence, Type, Union
 
 from mayim import Executor, Hydrator, Mayim
@@ -12,14 +12,13 @@ from mayim.extension.statistics import (
 from mayim.interface.base import BaseInterface
 from mayim.registry import InterfaceRegistry, Registry
 
-logger = getLogger("quart.app")
 try:
-    from quart import Quart
+    from starlette.applications import Starlette
 
-    QUART_INSTALLED = True
+    STARLETTE_INSTALLED = True
 except ModuleNotFoundError:
-    QUART_INSTALLED = False
-    Quart = type("Quart", (), {})  # type: ignore
+    STARLETTE_INSTALLED = False
+    Starlette = type("Starlette", (), {})  # type: ignore
 
 
 class Default:
@@ -29,7 +28,7 @@ class Default:
 _default = Default()
 
 
-class QuartMayimExtension:
+class StarletteMayimExtension:
     def __init__(
         self,
         *,
@@ -37,13 +36,13 @@ class QuartMayimExtension:
         dsn: str = "",
         hydrator: Optional[Hydrator] = None,
         pool: Optional[BaseInterface] = None,
-        app: Optional[Quart] = None,
+        app: Optional[Starlette] = None,
         counters: Union[Default, bool] = _default,
     ):
-        if not QUART_INSTALLED:
+        if not STARLETTE_INSTALLED:
             raise MayimError(
-                "Could not locate Quart. It must be installed to use "
-                "QuartMayimExtension. Try: pip install quart"
+                "Could not locate Starlette. It must be installed to use "
+                "StarletteMayimExtension. Try: pip install starlette"
             )
         self.executors = executors or []
         for executor in self.executors:
@@ -57,19 +56,23 @@ class QuartMayimExtension:
         if app is not None:
             self.init_app(app)
 
-    def init_app(self, app: Quart) -> None:
-        @app.while_serving
-        async def lifespan():
+    def init_app(
+        self, app: Starlette, logger: Optional[Logger] = None
+    ) -> None:
+        async def startup():
             Mayim(executors=self.executors, **self.mayim_kwargs)
             for interface in InterfaceRegistry():
                 await interface.open()
 
-            yield
-
+        async def shutdown():
             for interface in InterfaceRegistry():
                 await interface.close()
 
+        app.add_event_handler("startup", startup)
+        app.add_event_handler("shutdown", shutdown)
+
         if display_statistics(self.counters, self.executors):
-            app.asgi_app = SQLStatisticsMiddleware(  # type: ignore
-                app.asgi_app, logger
-            )
+            if logger is None:
+                basicConfig(level=INFO)
+                logger = getLogger("mayim")
+            app.add_middleware(SQLStatisticsMiddleware, logger=logger)

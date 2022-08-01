@@ -53,7 +53,7 @@ The docs: [ahopkins.github.io/mayim](https://ahopkins.github.io/mayim/guide/)
 
 ### Quart
 
-Mayim can attach to Quart using the customary `init_app` pattern and will handle setting up Mayim and the lifecycle events.
+Mayim can attach to Quart using the `init_app` pattern and will handle setting up Mayim and the lifecycle events.
 
 ```python
 from quart import Quart
@@ -121,4 +121,53 @@ Extend.register(
 async def handler(request: Request, executor: CityExecutor):
     cities = await executor.select_all_cities()
     return json({"cities": [asdict(city) for city in cities]})
+```
+
+
+### Starlette
+
+Mayim can attach to Starlette using the `init_app` pattern and will handle setting up Mayim and the lifecycle events.
+
+```python
+from starlette.applications import Starlette
+from starlette.responses import JSONResponse
+from starlette.routing import Route
+from dataclasses import asdict
+from typing import List
+from mayim import PostgresExecutor
+from model import City
+
+from mayim.extension import StarletteMayimExtension
+from mayim.extension.statistics import SQLCounterMixin
+
+
+class CityExecutor(
+    SQLCounterMixin,
+    PostgresExecutor,
+):
+    async def select_all_cities(
+        self, limit: int = 4, offset: int = 0
+    ) -> List[City]:
+        ...
+
+
+ext = StarletteMayimExtension(
+    executors=[CityExecutor],
+    dsn="postgres://postgres:postgres@localhost:5432/world",
+)
+
+
+async def handler(request):
+    executor = CityExecutor()
+    cities = await executor.select_all_cities()
+    return JSONResponse({"cities": [asdict(city) for city in cities]})
+
+
+app = Starlette(
+    debug=True,
+    routes=[
+        Route("/", handler),
+    ],
+)
+ext.init_app(app)
 ```

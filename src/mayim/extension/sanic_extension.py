@@ -5,7 +5,7 @@ from mayim.exception import MayimError
 from mayim.extension.statistics import (
     display_statistics,
     log_statistics_report,
-    setup_qry_counter,
+    setup_query_counter,
 )
 from mayim.interface.base import BaseInterface
 from mayim.registry import InterfaceRegistry, Registry
@@ -13,6 +13,7 @@ from mayim.registry import InterfaceRegistry, Registry
 try:
     from sanic.helpers import Default, _default
     from sanic.log import logger
+    from sanic.signals import Event
     from sanic_ext import Extend
     from sanic_ext.extensions.base import Extension
 
@@ -73,8 +74,18 @@ class SanicMayimExtension(Extension):
                 logger.info(f"Closing {interface}")
                 await interface.close()
 
+        for executor in Registry().values():
+            if isinstance(executor, Executor):
+                bootstrap.dependency(executor)
+            else:
+                bootstrap.add_dependency(
+                    executor, lambda *_: Mayim.get(executor)
+                )
         if display_statistics(self.counters, self.executors):
-            self.app.on_request(setup_qry_counter)
+            self.app.signal(Event.HTTP_LIFECYCLE_REQUEST)(setup_query_counter)
+
+        if display_statistics(self.counters, self.executors):
+            self.app.on_request(setup_query_counter)
 
             @self.app.on_response
             async def display(*_):

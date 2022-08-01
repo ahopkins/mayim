@@ -22,4 +22,6 @@ class Hydrator:
             model = self.fallback
         elif model in (str, int, float, bool):
             return model(*data.values())
+        elif model.__name__ == "Dict":
+            return data
         return model(**data)

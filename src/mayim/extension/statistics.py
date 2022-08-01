@@ -24,6 +24,21 @@ class SQLCounterMixin(SQLExecutor):
         return super()._run_sql(*args, **kwargs)
 
 
+class SQLStatisticsMiddleware:
+    def __init__(self, app, logger):
+        self.app = app
+        self.logger = logger
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            setup_query_counter()
+        response = await self.app(scope, receive, send)
+        if scope["type"] == "http":
+            log_statistics_report(self.logger)
+
+        return response
+
+
 def display_statistics(counters, executors) -> bool:
     if isinstance(counters, bool):
         return counters
@@ -35,7 +50,7 @@ def display_statistics(counters, executors) -> bool:
     return any(_is_sql_counter(executor) for executor in executors)
 
 
-def setup_qry_counter(*_):
+def setup_query_counter(*_, **__):
     registry = Registry()
     for executor in registry.values():
         if hasattr(executor, "reset"):

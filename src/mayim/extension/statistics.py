@@ -50,7 +50,7 @@ def display_statistics(counters, executors) -> bool:
     return any(_is_sql_counter(executor) for executor in executors)
 
 
-def setup_query_counter(**_):
+def setup_query_counter(*_, **__):
     registry = Registry()
     for executor in registry.values():
         if hasattr(executor, "reset"):

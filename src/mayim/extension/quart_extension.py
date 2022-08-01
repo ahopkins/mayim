@@ -1,19 +1,18 @@
 from __future__ import annotations
 
+from logging import getLogger
 from typing import Optional, Sequence, Type, Union
 
 from mayim import Executor, Hydrator, Mayim
 from mayim.exception import MayimError
-<<<<<<< Updated upstream
-=======
 from mayim.extension.statistics import (
     display_statistics,
     SQLStatisticsMiddleware,
 )
->>>>>>> Stashed changes
 from mayim.interface.base import BaseInterface
 from mayim.registry import InterfaceRegistry, Registry
 
+logger = getLogger("quart.app")
 try:
     from quart import Quart
 
@@ -23,8 +22,6 @@ except ModuleNotFoundError:
     Quart = type("Quart", (), {})  # type: ignore
 
 
-<<<<<<< Updated upstream
-=======
 class Default:
     ...
 
@@ -32,7 +29,6 @@ class Default:
 _default = Default()
 
 
->>>>>>> Stashed changes
 class QuartMayimExtension:
     def __init__(
         self,
@@ -42,6 +38,7 @@ class QuartMayimExtension:
         hydrator: Optional[Hydrator] = None,
         pool: Optional[BaseInterface] = None,
         app: Optional[Quart] = None,
+        counters: Union[Default, bool] = _default,
     ):
         if not QUART_INSTALLED:
             raise MayimError(
@@ -56,6 +53,7 @@ class QuartMayimExtension:
             "hydrator": hydrator,
             "pool": pool,
         }
+        self.counters = counters
         if app is not None:
             self.init_app(app)
 
@@ -70,11 +68,8 @@ class QuartMayimExtension:
 
             for interface in InterfaceRegistry():
                 await interface.close()
-<<<<<<< Updated upstream
-=======
 
         if display_statistics(self.counters, self.executors):
             app.asgi_app = SQLStatisticsMiddleware(  # type: ignore
                 app.asgi_app, logger
             )
->>>>>>> Stashed changes

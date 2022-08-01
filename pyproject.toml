@@ -23,7 +23,8 @@ module = [
     "psycopg.*",
     "quart.*",
     "sanic_ext.*",
-    "sanic.*"
+    "sanic.*",
+    "starlette.*"
 ]
 ignore_missing_imports = true
 

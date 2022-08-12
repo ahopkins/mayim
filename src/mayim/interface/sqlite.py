@@ -19,6 +19,7 @@ class SQLitePool(BaseInterface):
 
     def __init__(self, db_path: str):
         self._db_path = db_path
+        super().__init__()
 
     def _setup_pool(self):
         if not AIOSQLITE_ENABLED:

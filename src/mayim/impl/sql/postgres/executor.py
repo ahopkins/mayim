@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional, Sequence
 
-from mayim.query.postgres import PostgresQuery
+from mayim.impl.sql.postgres.query import PostgresQuery
 
-from .sql import SQLExecutor
+from ..executor import SQLExecutor
 
 try:
     from psycopg.rows import dict_row

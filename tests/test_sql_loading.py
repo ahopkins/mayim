@@ -1,6 +1,6 @@
 from mayim import Mayim, PostgresExecutor, sql
-from mayim.query.postgres import PostgresQuery
-from mayim.query.sql import ParamType, SQLQuery
+from mayim.impl.sql.postgres.query import PostgresQuery
+from mayim.impl.sql.query import ParamType, SQLQuery
 
 from .app.model import Item
 

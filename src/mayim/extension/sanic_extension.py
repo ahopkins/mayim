@@ -1,13 +1,13 @@
 from typing import Optional, Sequence, Type, Union
 
 from mayim import Executor, Hydrator, Mayim
+from mayim.base.interface import BaseInterface
 from mayim.exception import MayimError
 from mayim.extension.statistics import (
     display_statistics,
     log_statistics_report,
     setup_query_counter,
 )
-from mayim.interface.base import BaseInterface
 from mayim.registry import InterfaceRegistry, Registry
 
 try:

@@ -3,8 +3,8 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from typing import Optional
 
+from mayim.base.interface import BaseInterface
 from mayim.exception import MayimError
-from mayim.interface.base import BaseInterface
 
 try:
     import aiosqlite

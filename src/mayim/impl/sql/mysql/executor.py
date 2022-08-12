@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional, Sequence
 
-from mayim.query.mysql import MysqlQuery
+from mayim.impl.sql.mysql.query import MysqlQuery
 
-from .sql import SQLExecutor
+from ..executor import SQLExecutor
 
 try:
     from asyncmy.cursors import DictCursor

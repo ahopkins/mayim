@@ -1,13 +1,13 @@
 import re
 
 from mayim.exception import MayimError
-from mayim.query.sql import ParamType, SQLQuery
+from mayim.impl.sql.query import ParamType, SQLQuery
 
 
-class SQLiteQuery(SQLQuery):
+class MysqlQuery(SQLQuery):
     __slots__ = ("name", "text", "param_type")
-    PATTERN_POSITIONAL_PARAMETER = re.compile(r"\?")
-    PATTERN_KEYWORD_PARAMETER = re.compile(r"\:[a-z_][a-z0-9_]")
+    PATTERN_POSITIONAL_PARAMETER = re.compile(r"%s")
+    PATTERN_KEYWORD_PARAMETER = re.compile(r"%\([a-z_][a-z0-9_]*\)")
 
     def __init__(self, name: str, text: str) -> None:
         super().__init__(name, text)
@@ -26,6 +26,3 @@ class SQLiteQuery(SQLQuery):
             self.param_type = ParamType.KEYWORD
         else:
             self.param_type = ParamType.NONE
-
-    def convert_sql_params(self):
-        return self

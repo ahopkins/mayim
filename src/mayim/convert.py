@@ -7,7 +7,7 @@ DOLLAR_POSITIONAL = re.compile(r"(\$(\d+))")
 
 
 def convert_sql_params(
-    query: str, positional_sub: str, keyword_sub: str
+    query: str, positional_sub: str = r"%s", keyword_sub: str = r"%(\2)s"
 ) -> str:
     matches = 0
     if DOLLAR_KEYWORD.search(query):

@@ -2,8 +2,8 @@ from unittest.mock import AsyncMock, MagicMock, Mock
 
 import pytest
 
-from mayim.executor import Executor
-from mayim.interface import postgres
+from mayim.base import Executor
+from mayim.impl.sql.postgres import interface
 from mayim.registry import (
     InterfaceRegistry,
     LazyHydratorRegistry,
@@ -59,7 +59,7 @@ def mock_postgres_pool(monkeypatch, postgres_connection_context):
     pool = AsyncMock()
     mock = MagicMock(return_value=pool)
     pool.connection = postgres_connection_context
-    monkeypatch.setattr(postgres, "AsyncConnectionPool", mock)
+    monkeypatch.setattr(interface, "AsyncConnectionPool", mock)
     return mock
 
 

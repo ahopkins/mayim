@@ -1,11 +1,11 @@
 from __future__ import annotations
-from sqlite3 import Cursor
 
+from sqlite3 import Cursor
 from typing import Any, Dict, Optional, Sequence, Tuple
 
-from mayim.query.sqlite import SQLiteQuery
+from mayim.impl.sql.sqlite.query import SQLiteQuery
 
-from .sql import SQLExecutor
+from ..executor import SQLExecutor
 
 try:
     import aiosqlite  # noqa

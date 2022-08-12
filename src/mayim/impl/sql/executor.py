@@ -18,11 +18,11 @@ from typing import (
 
 from mayim.convert import convert_sql_params
 from mayim.exception import MayimError, MissingSQL, RecordNotFound
-from mayim.interface.lazy import LazyPool
-from mayim.query.sql import ParamType, SQLQuery
+from mayim.impl.sql.query import ParamType, SQLQuery
+from mayim.lazy.interface import LazyPool
 from mayim.registry import LazyHydratorRegistry, LazySQLRegistry
 
-from .base import Executor, is_auto_exec
+from ...base.executor import Executor, is_auto_exec
 
 if sys.version_info < (3, 10):
     UnionType = type("UnionType", (), {})

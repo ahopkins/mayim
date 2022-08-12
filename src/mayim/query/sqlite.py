@@ -6,6 +6,8 @@ from mayim.query.sql import ParamType, SQLQuery
 
 class SQLiteQuery(SQLQuery):
     __slots__ = ("name", "text", "param_type")
+    PATTERN_POSITIONAL_PARAMETER = re.compile(r"\?")
+    PATTERN_KEYWORD_PARAMETER = re.compile(r"\:[a-z_][a-z0-9_]")
 
     def __init__(self, name: str, text: str) -> None:
         super().__init__(name, text)
@@ -26,10 +28,4 @@ class SQLiteQuery(SQLQuery):
             self.param_type = ParamType.NONE
 
     def convert_sql_params(self):
-        # if self.param_type == ParamType.POSITIONAL:
-        #     return self.PATTERN_POSITIONAL_PARAMETER.sub(
-        #         r"%s", converted_text, 0
-        #     )
-        # if self.param_type == ParamType.KEYWORD:
-        #     return self.PATTERN_KEYWORD_PARAMETER.sub(r"%s", converted_text, 0)
         return self

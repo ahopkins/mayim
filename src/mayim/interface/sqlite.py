@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from typing import AsyncIterator, Optional
+from typing import Optional
 
 from mayim.exception import MayimError
 from mayim.interface.base import BaseInterface
@@ -28,27 +28,12 @@ class SQLitePool(BaseInterface):
             )
 
     async def open(self):
-        ...
-        # self._db = await aiosqlite.connect(self._db_path)
-        # self._db.row_factory = aiosqlite.Row
+        self._db = await aiosqlite.connect(self._db_path)
+        self._db.row_factory = aiosqlite.Row
 
     async def close(self):
-        ...
-        # await self._db.close()
+        await self._db.close()
 
     @asynccontextmanager
     async def connection(self, timeout: Optional[float] = None):
         yield self._db
-        # ) -> AsyncIterator[Connection]:
-        # existing = self.existing_connection()
-        # if existing:
-        #     yield existing
-        # else:
-        #     transaction = self.in_transaction()
-        #     async with self._pool.acquire() as conn:
-        #         if transaction:
-        #             await conn.begin()
-        #         yield conn
-        #         if transaction:
-        #             if self.do_commit():
-        #                 await conn.commit()

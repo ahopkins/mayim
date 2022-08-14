@@ -41,7 +41,7 @@ async def handler():
 
 ## Sanic
 
-Mayim uses [Sanic Extensions](https://sanic.dev/en/plugins/sanic-ext/getting-started.html) v22.6+ to extend your [Sanic app](https://sanic.dev). It starts Mayim and provides dependency injections into your routes of all of the executors
+Mayim uses [Sanic Extensions](https://sanic.dev/en/plugins/sanic-ext/getting-started.html) v22.6+ to extend your [Sanic app](https://sanic.dev). It starts Mayim and provides [dependency injections](https://sanic.dev/en/plugins/sanic-ext/injection.html#injecting-services) into your routes of all of the executors.
 
 ```python
 from typing import List
@@ -50,7 +50,7 @@ from sanic import Sanic, Request, json
 from sanic_ext import Extend
 from mayim import Mayim
 from mayim.executor import Executor
-from mayim.extensions import MayimExtension
+from mayim.extensions import SanicMayimExtension
 
 
 class CityExecutor(Executor):
@@ -62,7 +62,7 @@ class CityExecutor(Executor):
 
 app = Sanic(__name__)
 Extend.register(
-    MayimExtension(
+    SanicMayimExtension(
         executors=[CityExecutor], dsn="postgres://..."
     )
 )

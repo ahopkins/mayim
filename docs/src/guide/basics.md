@@ -26,10 +26,10 @@ We will get into it in [more detail later](executors), but the `Executor` is the
 
 You need to:
 
-- subclass `Executor` (more likely you want one of its subclasses: `PostgresExecutor` or `MysqlExecutor`);
-- create method definitions that match the names of your SQL statements (yes, those methods will likely be empty);
-- name the arguments that will be injected into the query; and
-- provide the model you want to be returned as the return annotation (or annotate it as a `Dict` if that is what you want back).
+- **subclass** `Executor` (more likely you want one of its subclasses: `PostgresExecutor`, `MysqlExecutor`, `SQLiteExecutor`);
+- create **method definitions** that match the names of your SQL statements (yes, those methods will likely be empty as seen in the snippet below);
+- name the **arguments** that will be injected into the query; and
+- provide the model you want to be returned as the **return annotation** (or annotate it as a `Dict` if that is what you want back).
 
 
 ```python
@@ -53,7 +53,7 @@ class CityExecutor(PostgresExecutor):
 
 **Usually**, your executor will have a bunch of empty methods. That is because Mayim will automatically generate the code needed to run the SQL statement and return the object specified in the return annotation.
 
-In this case, it will try to execute the SQL query called `./queries/select_all_cities.sql` (see [more on writing SQL files](sqlfiles)). Then, it will try and turn the result into a list of `City` objects.
+In this case, since `select_all_cities` is an empty method, Mayim will try to execute the SQL query called `./queries/select_all_cities.sql` (see [more on writing SQL files](sqlfiles)). Then, it will try and turn the result into a list of `City` objects because of the method's return annotation.
 
 ## Empty `Executor` methods
 

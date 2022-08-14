@@ -1,17 +1,17 @@
 from .base import Executor, Hydrator
-from .decorator import hydrator, register, sql
-from .impl.sql.mysql.executor import MysqlExecutor
-from .impl.sql.mysql.interface import MysqlPool
-from .impl.sql.postgres.executor import PostgresExecutor
-from .impl.sql.postgres.interface import PostgresPool
-from .impl.sql.sqlite.executor import SQLiteExecutor
-from .impl.sql.sqlite.interface import SQLitePool
+from .decorator import hydrator, query, register
 from .mayim import Mayim
+from .sql.mysql.executor import MysqlExecutor
+from .sql.mysql.interface import MysqlPool
+from .sql.postgres.executor import PostgresExecutor
+from .sql.postgres.interface import PostgresPool
+from .sql.sqlite.executor import SQLiteExecutor
+from .sql.sqlite.interface import SQLitePool
 
 __all__ = (
     "hydrator",
     "register",
-    "sql",
+    "query",
     "Executor",
     "Hydrator",
     "Mayim",

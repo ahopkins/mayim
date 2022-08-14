@@ -2,9 +2,9 @@ from unittest.mock import AsyncMock
 
 from mayim import Mayim, register
 from mayim.base.executor import Executor
-from mayim.impl.sql.mysql.interface import MysqlPool
-from mayim.impl.sql.postgres.interface import PostgresPool
 from mayim.registry import Registry
+from mayim.sql.mysql.interface import MysqlPool
+from mayim.sql.postgres.interface import PostgresPool
 
 
 def test_universal_pool_dsn(FooExecutor):

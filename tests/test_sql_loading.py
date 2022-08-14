@@ -1,6 +1,6 @@
-from mayim import Mayim, PostgresExecutor, sql
-from mayim.impl.sql.postgres.query import PostgresQuery
-from mayim.impl.sql.query import ParamType, SQLQuery
+from mayim import Mayim, PostgresExecutor, query
+from mayim.sql.postgres.query import PostgresQuery
+from mayim.sql.query import ParamType, SQLQuery
 
 from .app.model import Item
 
@@ -45,7 +45,7 @@ async def test_sql_decorator_keyword(postgres_connection):
     postgres_connection.result = {"item_id": 99, "name": "thing"}
 
     class ItemExecutor(PostgresExecutor):
-        @sql(
+        @query(
             """SELECT *
             FROM otheritems
             LIMIT $limit OFFSET $offset;
@@ -99,7 +99,7 @@ async def test_sql_decorator_positional(postgres_connection):
     postgres_connection.result = {"item_id": 99, "name": "thing"}
 
     class ItemExecutor(PostgresExecutor):
-        @sql(
+        @query(
             """SELECT *
             FROM otheritems
             LIMIT $1 OFFSET $2;

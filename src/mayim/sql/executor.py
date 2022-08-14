@@ -3,11 +3,12 @@ from __future__ import annotations
 import sys
 from contextlib import asynccontextmanager
 from functools import wraps
-from inspect import getmembers, isawaitable, isfunction, signature
+from inspect import Parameter, getmembers, isawaitable, isfunction, signature
 from pathlib import Path
 from typing import (
     Any,
     Dict,
+    List,
     Optional,
     Sequence,
     Type,
@@ -16,15 +17,15 @@ from typing import (
     get_origin,
 )
 
+from mayim.base.executor import Executor, is_auto_exec
+from mayim.base.query import Query
 from mayim.convert import convert_sql_params
 from mayim.exception import MayimError, MissingSQL, RecordNotFound
-from mayim.impl.sql.query import ParamType, SQLQuery
 from mayim.lazy.interface import LazyPool
-from mayim.registry import LazyHydratorRegistry, LazySQLRegistry
+from mayim.registry import LazyHydratorRegistry, LazyQueryRegistry
+from mayim.sql.query import ParamType, SQLQuery
 
-from ...base.executor import Executor, is_auto_exec
-
-if sys.version_info < (3, 10):
+if sys.version_info < (3, 10):  # no cov
     UnionType = type("UnionType", (), {})
 else:
     from types import UnionType
@@ -35,11 +36,17 @@ class SQLExecutor(Executor[SQLQuery]):
     QUERY_CLASS = SQLQuery
     POSITIONAL_SUB: str = r"%s"
     KEYWORD_SUB: str = r"%(\2)s"
-    _filename_prefix: str = "mayim_"
+    generic_prefix: str = "mayim_"
+    verb_prefixes: List[str] = [
+        "select_",
+        "insert_",
+        "update_",
+        "delete_",
+    ]
 
     def execute(
         self,
-        query: str,
+        query: Union[str, Query],
         name: str = "",
         model: Optional[Type[object]] = None,
         as_list: bool = False,
@@ -47,6 +54,8 @@ class SQLExecutor(Executor[SQLQuery]):
         posargs: Optional[Sequence[Any]] = None,
         params: Optional[Dict[str, Any]] = None,
     ):
+        if isinstance(query, Query):
+            query = query.text
         query = convert_sql_params(
             query, self.POSITIONAL_SUB, self.KEYWORD_SUB
         )
@@ -73,7 +82,7 @@ class SQLExecutor(Executor[SQLQuery]):
         no_result = False
         if model is None:
             model, _ = self._context.get()
-        if model is None:
+        if model in (None, Parameter.empty):
             no_result = True
         hydrator = self._hydrators.get(name, self.hydrator)
         factory = hydrator._make(model)
@@ -92,8 +101,9 @@ class SQLExecutor(Executor[SQLQuery]):
                 return None
             if as_list:
                 return []
+            query_name = f"<{name}> " if name else ""
             raise RecordNotFound(
-                f"Query <{name}> did not find any record using "
+                f"Query {query_name}did not find any record using "
                 f"{posargs or ()} and {params or {}}"
             )
         results = factory(raw)
@@ -115,10 +125,10 @@ class SQLExecutor(Executor[SQLQuery]):
                 query, self.POSITIONAL_SUB, self.KEYWORD_SUB
             )
         else:
-            _, query_name = self._context.get()
-            # TODO:
-            # - Fixed for positional
-            query = (self._queries[query_name]).text
+            if not name:
+                _, query_name = self._context.get()
+                name = query_name
+            query = (self._queries[name]).text
         return self._run_sql(
             query=query,
             as_list=as_list,
@@ -174,7 +184,7 @@ class SQLExecutor(Executor[SQLQuery]):
 
         base_path = cls.get_base_path("queries")
         for name, func in getmembers(cls):
-            query = LazySQLRegistry.get(cls.__name__, name)
+            query = LazyQueryRegistry.get(cls.__name__, name)
             hydrator = LazyHydratorRegistry.get(cls.__name__, name)
             if hydrator:
                 cls._hydrators[name] = hydrator
@@ -188,7 +198,7 @@ class SQLExecutor(Executor[SQLQuery]):
                 and not name.startswith("_")
             ):
                 ignore = True
-                filename = f"{cls._filename_prefix}{filename}"
+                filename = f"{cls.generic_prefix}{filename}"
             else:
                 continue
 
@@ -207,8 +217,17 @@ class SQLExecutor(Executor[SQLQuery]):
                         f"Could not find SQL for {cls.__name__}.{name}. "
                         f"Looked for file named: {path}"
                     )
-            else:
-                setattr(cls, name, cls._setup(func))
+            setattr(cls, name, cls._setup(func))
+
+        for path in base_path.glob("*.sql"):
+            if path.stem not in cls._queries and (
+                cls.is_query_name(path.stem)
+                or path.stem.startswith(cls.generic_prefix)
+            ):
+                cls._queries[path.stem] = cls.QUERY_CLASS(
+                    path.stem, cls._load_sql("", path)
+                )
+
         cls._loaded = True
 
     @classmethod
@@ -225,14 +244,9 @@ class SQLExecutor(Executor[SQLQuery]):
             return cls.is_query_name(obj.__name__)
         return False
 
-    @staticmethod
-    def is_query_name(name: str):
-        return (
-            name.startswith("select_")
-            or name.startswith("insert_")
-            or name.startswith("update_")
-            or name.startswith("delete_")
-        )
+    @classmethod
+    def is_query_name(cls, name: str):
+        return any(name.startswith(prefix) for prefix in cls.verb_prefixes)
 
     @staticmethod
     def _setup(func):

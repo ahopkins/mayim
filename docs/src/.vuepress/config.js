@@ -7,6 +7,7 @@ const pages = [
             'simple',
             'executors',
             'hydrators',
+            'extensions',
           ]
 module.exports = {
   /**
@@ -80,5 +81,9 @@ module.exports = {
     '@vuepress/plugin-back-to-top',
     '@vuepress/plugin-medium-zoom',
     "tabs",
+    [
+      "vuepress-plugin-code-copy",
+      { color: "#5dadec", backgroundTransition: false },
+    ],
   ]
 }

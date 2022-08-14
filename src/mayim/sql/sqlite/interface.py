@@ -15,7 +15,7 @@ except ModuleNotFoundError:
 
 
 class SQLitePool(BaseInterface):
-    scheme = "sqlite"
+    scheme = ""
 
     def __init__(self, db_path: str):
         self._db_path = db_path
@@ -37,4 +37,12 @@ class SQLitePool(BaseInterface):
 
     @asynccontextmanager
     async def connection(self, timeout: Optional[float] = None):
+        close_when_done = False
+        if not self._db:
+            close_when_done = True
+            await self.open()
+
         yield self._db
+
+        if close_when_done:
+            await self.close()

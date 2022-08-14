@@ -18,6 +18,7 @@ include_trailing_comma = true
 
 [[tool.mypy.overrides]]
 module = [
+    "aiosqlite.*",
     "asyncmy.*",
     "psycopg_pool.*",
     "psycopg.*",

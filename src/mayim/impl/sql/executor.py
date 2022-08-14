@@ -18,11 +18,11 @@ from typing import (
 
 from mayim.convert import convert_sql_params
 from mayim.exception import MayimError, MissingSQL, RecordNotFound
-from mayim.interface.lazy import LazyPool
-from mayim.query.sql import ParamType, SQLQuery
+from mayim.impl.sql.query import ParamType, SQLQuery
+from mayim.lazy.interface import LazyPool
 from mayim.registry import LazyHydratorRegistry, LazySQLRegistry
 
-from .base import Executor, is_auto_exec
+from ...base.executor import Executor, is_auto_exec
 
 if sys.version_info < (3, 10):
     UnionType = type("UnionType", (), {})
@@ -33,6 +33,8 @@ else:
 class SQLExecutor(Executor[SQLQuery]):
     ENABLED: bool = False
     QUERY_CLASS = SQLQuery
+    POSITIONAL_SUB: str = r"%s"
+    KEYWORD_SUB: str = r"%(\2)s"
     _filename_prefix: str = "mayim_"
 
     def execute(
@@ -45,7 +47,9 @@ class SQLExecutor(Executor[SQLQuery]):
         posargs: Optional[Sequence[Any]] = None,
         params: Optional[Dict[str, Any]] = None,
     ):
-        query = convert_sql_params(query)
+        query = convert_sql_params(
+            query, self.POSITIONAL_SUB, self.KEYWORD_SUB
+        )
         return self._execute(
             query=query,
             name=name,
@@ -107,7 +111,9 @@ class SQLExecutor(Executor[SQLQuery]):
         params: Optional[Dict[str, Any]] = None,
     ):
         if query:
-            query = convert_sql_params(query)
+            query = convert_sql_params(
+                query, self.POSITIONAL_SUB, self.KEYWORD_SUB
+            )
         else:
             _, query_name = self._context.get()
             # TODO:
@@ -206,6 +212,13 @@ class SQLExecutor(Executor[SQLQuery]):
         cls._loaded = True
 
     @classmethod
+    def _load_sql(cls, query: Optional[str], path: Path):
+        if not query:
+            with open(path, "r") as f:
+                query = f.read()
+        return convert_sql_params(query, cls.POSITIONAL_SUB, cls.KEYWORD_SUB)
+
+    @classmethod
     def is_operation(cls, obj):
         """Check if the object is a method that starts with a query prefix."""
         if isfunction(obj):
@@ -220,13 +233,6 @@ class SQLExecutor(Executor[SQLQuery]):
             or name.startswith("update_")
             or name.startswith("delete_")
         )
-
-    @staticmethod
-    def _load_sql(query: Optional[str], path: Path):
-        if not query:
-            with open(path, "r") as f:
-                query = f.read()
-        return convert_sql_params(query)
 
     @staticmethod
     def _setup(func):

@@ -1,5 +1,5 @@
 from mayim import Mayim, PostgresExecutor, hydrator
-from mayim.hydrator.base import Hydrator
+from mayim.base.hydrator import Hydrator
 
 
 class HydratorA(Hydrator):

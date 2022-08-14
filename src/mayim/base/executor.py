@@ -17,11 +17,11 @@ from typing import (
     Union,
 )
 
+from mayim.base.hydrator import Hydrator
+from mayim.base.interface import BaseInterface
+from mayim.base.query import Query
 from mayim.exception import MayimError
-from mayim.hydrator import Hydrator
-from mayim.interface.base import BaseInterface
-from mayim.interface.lazy import LazyPool
-from mayim.query.base import Query
+from mayim.lazy.interface import LazyPool
 from mayim.registry import Registry
 
 T = TypeVar("T", bound=Query)

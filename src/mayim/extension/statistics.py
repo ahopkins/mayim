@@ -2,7 +2,7 @@ from collections import defaultdict
 from inspect import isclass
 from typing import DefaultDict
 
-from mayim.executor.sql import SQLExecutor
+from mayim.impl.sql.executor import SQLExecutor
 from mayim.registry import Registry
 
 

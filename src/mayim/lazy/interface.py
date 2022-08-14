@@ -1,7 +1,7 @@
 from typing import Optional, Type
 
+from mayim.base.interface import BaseInterface
 from mayim.exception import MayimError
-from mayim.interface.base import BaseInterface
 
 
 class LazyPool(BaseInterface):

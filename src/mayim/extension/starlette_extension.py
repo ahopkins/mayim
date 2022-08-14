@@ -4,12 +4,12 @@ from logging import INFO, Logger, basicConfig, getLogger
 from typing import Optional, Sequence, Type, Union
 
 from mayim import Executor, Hydrator, Mayim
+from mayim.base.interface import BaseInterface
 from mayim.exception import MayimError
 from mayim.extension.statistics import (
     SQLStatisticsMiddleware,
     display_statistics,
 )
-from mayim.interface.base import BaseInterface
 from mayim.registry import InterfaceRegistry, Registry
 
 try:

@@ -5,9 +5,8 @@ from inspect import isclass
 from typing import TYPE_CHECKING, DefaultDict, Dict, Optional, Set, Type, Union
 
 if TYPE_CHECKING:
-    from mayim.executor import Executor
-    from mayim.hydrator import Hydrator
-    from mayim.interface.base import BaseInterface
+    from mayim.base import Executor, Hydrator
+    from mayim.base.interface import BaseInterface
 
 
 class Registry(dict):

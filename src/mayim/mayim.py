@@ -3,12 +3,11 @@ from inspect import isclass
 from typing import Optional, Sequence, Type, TypeVar, Union
 from urllib.parse import urlparse
 
+from mayim.base import Executor, Hydrator
+from mayim.base.interface import BaseInterface
 from mayim.exception import MayimError
-from mayim.executor import Executor
-from mayim.hydrator import Hydrator
-from mayim.interface.base import BaseInterface
-from mayim.interface.lazy import LazyPool
-from mayim.interface.postgres import PostgresPool
+from mayim.impl.sql.postgres.interface import PostgresPool
+from mayim.lazy.interface import LazyPool
 from mayim.registry import InterfaceRegistry, Registry
 
 T = TypeVar("T", bound=Executor)

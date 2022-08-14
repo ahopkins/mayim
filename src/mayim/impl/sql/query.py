@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum, auto
 
-from .base import Query
+from ...base.query import Query
 
 
 class ParamType(Enum):
@@ -38,6 +38,3 @@ class SQLQuery(Query):
             and self.text == other.text
             and self.param_type is other.param_type
         )
-
-    async def covert_sql_params(self) -> str:
-        ...

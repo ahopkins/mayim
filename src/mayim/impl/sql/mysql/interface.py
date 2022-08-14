@@ -3,8 +3,8 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from typing import AsyncIterator, Optional
 
+from mayim.base.interface import BaseInterface
 from mayim.exception import MayimError
-from mayim.interface.base import BaseInterface
 
 try:
     from asyncmy import Connection, create_pool

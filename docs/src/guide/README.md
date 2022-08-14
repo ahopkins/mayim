@@ -22,7 +22,7 @@ Here is a real simple example:
 ```python
 import asyncio
 from typing import List
-from mayim import Mayim, PostgresExecutor, sql
+from mayim import Mayim, PostgresExecutor, query
 from dataclasses import dataclass
 
 @dataclass
@@ -30,7 +30,7 @@ class Person:
     name: str
 
 class PersonExecutor(PostgresExecutor):
-    @sql("SELECT * FROM people LIMIT $limit OFFSET $offset")
+    @query("SELECT * FROM people LIMIT $limit OFFSET $offset")
     async def select_all_people(
         self, limit: int = 4, offset: int = 0
     ) -> List[Person]:

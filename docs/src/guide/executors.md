@@ -124,10 +124,10 @@ async def handler(request: Request):
 Sometimes you may decide that you do not want to have to [load SQL from files](sqlfiles). In this case, you can define the SQL in your Python code.
 
 ```python
-from mayim import PostgresExecutor, sql
+from mayim import PostgresExecutor, query
 
 class ItemExecutor(PostgresExecutor):
-    @sql(
+    @query(
         """SELECT *
         FROM items
         WHERE item_id = $item_id;

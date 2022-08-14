@@ -16,13 +16,12 @@ from typing import (
     get_origin,
 )
 
+from mayim.base.executor import Executor, is_auto_exec
 from mayim.convert import convert_sql_params
 from mayim.exception import MayimError, MissingSQL, RecordNotFound
-from mayim.impl.sql.query import ParamType, SQLQuery
 from mayim.lazy.interface import LazyPool
-from mayim.registry import LazyHydratorRegistry, LazySQLRegistry
-
-from ...base.executor import Executor, is_auto_exec
+from mayim.registry import LazyHydratorRegistry, LazyQueryRegistry
+from mayim.sql.query import ParamType, SQLQuery
 
 if sys.version_info < (3, 10):
     UnionType = type("UnionType", (), {})
@@ -174,7 +173,7 @@ class SQLExecutor(Executor[SQLQuery]):
 
         base_path = cls.get_base_path("queries")
         for name, func in getmembers(cls):
-            query = LazySQLRegistry.get(cls.__name__, name)
+            query = LazyQueryRegistry.get(cls.__name__, name)
             hydrator = LazyHydratorRegistry.get(cls.__name__, name)
             if hydrator:
                 cls._hydrators[name] = hydrator

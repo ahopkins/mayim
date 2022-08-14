@@ -4,7 +4,7 @@ from typing import List, Optional
 
 import pytest
 
-from mayim import Mayim, PostgresExecutor, sql
+from mayim import Mayim, PostgresExecutor, query
 from mayim.exception import MissingSQL, RecordNotFound
 
 
@@ -12,7 +12,7 @@ async def test_empty_result_single(postgres_connection):
     postgres_connection.result = None
 
     class ItemExecutor(PostgresExecutor):
-        @sql("SELECT * FROM otheritems WHERE item_id=$item_id")
+        @query("SELECT * FROM otheritems WHERE item_id=$item_id")
         async def select_item(self, item_id: int) -> int:
             ...
 
@@ -34,7 +34,7 @@ async def test_empty_result_multiple(postgres_connection):
     postgres_connection.result = None
 
     class ItemExecutor(PostgresExecutor):
-        @sql("SELECT * FROM otheritems")
+        @query("SELECT * FROM otheritems")
         async def select_items(self) -> List[int]:
             ...
 
@@ -49,7 +49,7 @@ async def test_empty_result_none_optional(postgres_connection):
     postgres_connection.result = None
 
     class ItemExecutor(PostgresExecutor):
-        @sql("SELECT * FROM otheritems")
+        @query("SELECT * FROM otheritems")
         async def select_items(self) -> Optional[int]:
             ...
 
@@ -64,7 +64,7 @@ async def test_empty_result_none_optional_list(postgres_connection):
     postgres_connection.result = None
 
     class ItemExecutor(PostgresExecutor):
-        @sql("SELECT * FROM otheritems")
+        @query("SELECT * FROM otheritems")
         async def select_items(self) -> Optional[List[int]]:
             ...
 
@@ -82,7 +82,7 @@ async def test_empty_result_none_union(postgres_connection):
     postgres_connection.result = None
 
     class ItemExecutor(PostgresExecutor):
-        @sql("SELECT * FROM otheritems")
+        @query("SELECT * FROM otheritems")
         async def select_items(self) -> int | None:
             ...
 

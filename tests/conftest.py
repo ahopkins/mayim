@@ -3,13 +3,13 @@ from unittest.mock import AsyncMock, MagicMock, Mock
 import pytest
 
 from mayim.base import Executor
-from mayim.impl.sql.postgres import interface
 from mayim.registry import (
     InterfaceRegistry,
     LazyHydratorRegistry,
-    LazySQLRegistry,
+    LazyQueryRegistry,
     Registry,
 )
+from mayim.sql.postgres import interface
 
 from .app.model import Foo
 
@@ -35,7 +35,7 @@ class PostgresConnectionMock:
 def reset_registry():
     Registry().reset()
     InterfaceRegistry().reset()
-    LazySQLRegistry().reset()
+    LazyQueryRegistry().reset()
     LazyHydratorRegistry().reset()
 
 

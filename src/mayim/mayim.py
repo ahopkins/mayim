@@ -6,9 +6,9 @@ from urllib.parse import urlparse
 from mayim.base import Executor, Hydrator
 from mayim.base.interface import BaseInterface
 from mayim.exception import MayimError
-from mayim.impl.sql.postgres.interface import PostgresPool
 from mayim.lazy.interface import LazyPool
 from mayim.registry import InterfaceRegistry, Registry
+from mayim.sql.postgres.interface import PostgresPool
 
 T = TypeVar("T", bound=Executor)
 DEFAULT_INTERFACE = PostgresPool

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum, auto
 
-from ...base.query import Query
+from mayim.base.query import Query
 
 
 class ParamType(Enum):

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional, Sequence
 
-from mayim.impl.sql.mysql.query import MysqlQuery
+from mayim.sql.mysql.query import MysqlQuery
 
 from ..executor import SQLExecutor
 

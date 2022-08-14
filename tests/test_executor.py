@@ -211,7 +211,11 @@ def test_missing_sql_not_strict():
         async def select_missing(self) -> int:
             ...
 
-    Mayim(executors=[FooExecutor()], dsn="foo://user:password@host:1234/db")
+    Mayim(
+        executors=[FooExecutor()],
+        dsn="foo://user:password@host:1234/db",
+        strict=False,
+    )
 
 
 def test_missing_sql_strict():

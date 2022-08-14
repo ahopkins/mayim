@@ -73,7 +73,7 @@ class Executor(Generic[T]):
 
     def execute(
         self,
-        query: str,
+        query: Union[str, Query],
         name: str = "",
         model: Optional[Type[object]] = None,
         as_list: bool = False,
@@ -81,7 +81,6 @@ class Executor(Generic[T]):
         posargs: Optional[Sequence[Any]] = None,
         params: Optional[Dict[str, Any]] = None,
     ):
-
         raise NotImplementedError(
             f"{self.__class__.__name__} does not define execute"
         )

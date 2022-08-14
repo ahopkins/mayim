@@ -41,6 +41,8 @@ class CityHydrator(Hydrator):
 
 In this simple example, rather than returning the actual `population` in the database, we will return it in units of 1 million people.
 
+As you can see, the `hydrate` method could return _ANYTHING_ you want it to. So if you need to support some other kind of model, all you need to do is create a hydrator that knows how to turn a `Dict[str, Any]` into the object type of your choice.
+
 ## As an async method
 
 Sometimes you may decide that you need `hydrate` to be an `async` method. That is acceptable. Notice how we use `async def hydate` in the below example.

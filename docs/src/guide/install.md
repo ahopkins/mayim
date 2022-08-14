@@ -1,6 +1,6 @@
 # Installation
 
-Mayim supports both **Postgres** and **MySQL**. More data sources may be included in the future.
+Mayim supports both **Postgres**, **MySQL**, and **SQLite**. More data sources may be included in the future.
 
 You can install Mayim using PIP:
 
@@ -8,7 +8,7 @@ You can install Mayim using PIP:
 pip install mayim
 ```
 
-To get access to support for a specific data source, make sure you install the appropriate dependencies
+To get access to support for a specific data source, make sure you install the appropriate dependencies. You must install one of the following drivers.
 
 ## Postgres
 
@@ -42,4 +42,21 @@ Or, as a convenience:
 
 ```
 pip install mayim[mysql]
+```
+
+## SQLite
+
+Dependencies:
+- [aiosqlite](https://github.com/omnilib/aiosqlite)
+
+Either install it independently:
+
+```
+pip install aiosqlite
+```
+
+Or, as a convenience:
+
+```
+pip install mayim[sqlite]
 ```

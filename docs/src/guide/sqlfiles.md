@@ -2,7 +2,7 @@
 
 Have you ever tried writing SQL statements in Python code? Its not a pleasant experience. :anguished: Wouldn't it just be nicer if you could write `*.sql` files? Then those files could have all the nice features your IDE wants to offer with syntax highlighting, code execution, auto-suggestions, etc.
 
-This part is not necessary, but to be honest is one of the really powerful features of Mayim so take advantage of it!
+Of course you do not need to define all of your queries in `.sql` files to use Mayime. But to be honest, it is one of the really powerful features of Mayim so take advantage of it!
 
 ## Where to save your `.sql` files?
 
@@ -15,11 +15,13 @@ Your SQL files should be located in a directory relative to the [Executor](execu
 └── my_executor.py
 ```
 
-That means if you define an executor in `./my_executor.py`, then Mayim will look for SQL files in `./queries`. That is to say that it is looking based upon the parent diectory wherever the `Executor` is defined.
+That means if you define an executor in `./my_executor.py`, then Mayim will look for SQL files in the directory called `./queries/`. That is to say that it is looking based upon the parent diectory wherever the `Executor` is defined.
 
 ### Customizing the location
 
 You can change the location for where these files are located. This is easily handled by setting `Executor.path` to the location where the SQL can be found.
+
+Here are some examples:
 
 #### Flat directory
 
@@ -89,6 +91,45 @@ class MyExecutor(PostgresExecutor):
 ```
 
 In this case, Mayim sees that there is a method named: `something`. Therefore, it will look for `mayim_something.sql`.
+
+### Custom prefix
+
+You can set the prefix to something other than `mayim_`:
+
+```python
+.
+├── queries
+│   └── blah_blah_something.sql
+└── my_executor.py
+
+```
+```python
+class MyExecutor(PostgresExecutor):
+    generic_prefix = "blah_blah_"
+
+    async def something(self) -> Something:
+        ...
+```
+
+Additionally, you can set the verb prefixes if you want:
+
+```python
+.
+├── queries
+│   └── create_something.sql
+└── my_executor.py
+
+```
+```python
+class MyExecutor(PostgresExecutor):
+    verb_prefixes = [
+        "create_", "read_", "update_", "delete_"
+    ]
+
+    async def create_something(self) -> Something:
+        ...
+```
+
 
 ## Parameter injection
 

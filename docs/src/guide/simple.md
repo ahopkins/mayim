@@ -71,7 +71,7 @@ class CityExecutor(PostgresExecutor):
 async def run():
     executor = CityExecutor()
     Mayim(dsn="postgres://postgres:postgres@localhost:5432/world")
-    print(await executor.all_cities())
+    print(await executor.select_all_cities())
 
 
 asyncio.run(run())

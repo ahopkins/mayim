@@ -1,6 +1,6 @@
-from dataclasses import asdict
 import re
 import sys
+from dataclasses import asdict
 
 import pytest
 

@@ -1,5 +1,6 @@
-from mayim.exception import MayimError
 import pytest
+
+from mayim.exception import MayimError
 
 
 async def test_transaction(postgres_connection, item_executor):

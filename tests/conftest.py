@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock
 
 import pytest
 
-from mayim import Mayim, query, PostgresExecutor
+from mayim import Mayim, PostgresExecutor, query
 from mayim.base import Executor
 from mayim.registry import (
     InterfaceRegistry,

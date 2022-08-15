@@ -2,7 +2,14 @@ from __future__ import annotations
 
 from ast import AsyncFunctionDef, Constant, Expr, FunctionDef, Pass, parse
 from contextvars import ContextVar
-from inspect import cleandoc, getdoc, getmodule, getsource, stack
+from inspect import (
+    _SourceObjectType,
+    cleandoc,
+    getdoc,
+    getmodule,
+    getsource,
+    stack,
+)
 from pathlib import Path
 from textwrap import dedent
 from typing import (
@@ -29,7 +36,7 @@ T = TypeVar("T", bound=Query)
 
 class Executor(Generic[T]):
     """
-    Responsible for being the interface between the DB and the application
+    Base class for creating executors
     """
 
     _queries: Dict[str, T]
@@ -38,6 +45,8 @@ class Executor(Generic[T]):
     _loaded: bool = False
     _hydrators: Dict[str, Hydrator]
     path: Optional[Union[str, Path]] = None
+    """`Optional[Union[str, Path]]`: Class property that is a custom  path "
+        location of queries to be loaded. Default to `None`"""
     ENABLED: bool = True
     QUERY_CLASS: Type[T]
 
@@ -46,6 +55,19 @@ class Executor(Generic[T]):
         pool: Optional[BaseInterface] = None,
         hydrator: Optional[Hydrator] = None,
     ) -> None:
+        """Base class for creating executors
+
+        Args:
+            pool (BaseInterface, optional): An interface used
+                for a specific executor to override a global pool.
+                Defaults to `None`.
+            hydrator (Hydrator, optional): A hydrator used
+                for a specific executor to override a global hydrator.
+                Defaults to `None`.
+
+        Raises:
+            MayimError: If a dependency is missing
+        """
         if not self.ENABLED:
             raise MayimError(
                 f"Cannot instantiate {self.__class__.__name__}. "
@@ -63,12 +85,24 @@ class Executor(Generic[T]):
 
     @property
     def hydrator(self) -> Hydrator:
+        """The assigned hydrator. Will return an instance specific hydrator
+        if one was assigned.
+
+        Returns:
+            Hydrator: The hydrator
+        """
         if self._hydrator:
             return self._hydrator
         return self._fallback_hydrator
 
     @property
     def pool(self) -> BaseInterface:
+        """The assigned pool. Will return an instance specific pool
+        if one was assigned.
+
+        Returns:
+            BaseInterface: The pool interface
+        """
         return self._pool
 
     def execute(
@@ -81,6 +115,22 @@ class Executor(Generic[T]):
         posargs: Optional[Sequence[Any]] = None,
         params: Optional[Dict[str, Any]] = None,
     ):
+        """Low-level API to execute a query and hydrate the results
+
+        Args:
+            query (Union[str, Query]): The query to be executed
+            name (str, optional): The name of the query. Defaults to `""`.
+            model (Type[object], optional): The model to be used
+                for hydration. Defaults to `None`.
+            as_list (bool, optional): Whether to return the results as a
+                list of hydrated objects. Defaults to `False`.
+            allow_none (bool, optional): Whether `None` is an acceptable return
+                value. Defaults to `False`.
+            posargs (Sequence[Any], optional): Positional arguments.
+                Defaults to `None`.
+            params (Dict[str, Any], optional): Keyword arguments.
+                Defaults to `None`.
+        """
         raise NotImplementedError(
             f"{self.__class__.__name__} does not define execute"
         )
@@ -94,11 +144,39 @@ class Executor(Generic[T]):
         posargs: Optional[Sequence[Any]] = None,
         params: Optional[Dict[str, Any]] = None,
     ):
+        """Low-level API to execute a query and return the results without
+        hydration.
+
+        Args:
+            query (Union[str, Query]): The query to be executed
+            name (str, optional): The name of the query. Defaults to `""`.
+            as_list (bool, optional): Whether to return the results as a
+                list of hydrated objects. Defaults to `False`.
+            allow_none (bool, optional): Whether `None` is an acceptable return
+                value. Defaults to `False`.
+            posargs (Sequence[Any], optional): Positional arguments.
+                Defaults to `None`.
+            params (Dict[str, Any], optional): Keyword arguments.
+                Defaults to `None`.
+        """
         raise NotImplementedError(
             f"{self.__class__.__name__} does not define run_sql"
         )
 
     def get_query(self, name: Optional[str] = None) -> T:
+        """Return a query
+
+        Args:
+            name (str, optional): The name of the query to be
+                retrieved. If no name is supplied, it will look for the query
+                by the name of the calling method. Defaults to `None`.
+
+        Raises:
+            MayimError: When the query coul not be found
+
+        Returns:
+            Query: A query object
+        """
         if not name:
             for frame in stack():
                 if self.is_query_name(frame.function):
@@ -111,6 +189,19 @@ class Executor(Generic[T]):
         return self._queries[name]
 
     def get_hydrator(self, name: Optional[str] = None) -> Hydrator:
+        """Return a hydrator
+
+        Args:
+            name (str, optional): The name of the hydrator to be
+                retrieved. If no name is supplied, it will look for the
+                hydrator by the name of the calling method. Defaults to `None`.
+
+        Raises:
+            MayimError: When the hydrator coul not be found
+
+        Returns:
+            Hydrator: A hydrator object
+        """
         if not name:
             for frame in stack():
                 if self.is_query_name(frame.function):
@@ -153,7 +244,30 @@ class Executor(Generic[T]):
         return base
 
 
-def is_auto_exec(func):
+def is_auto_exec(func: _SourceObjectType) -> bool:
+    """Check if a method should be auto-executed.
+
+    Example:
+
+        Any of the following are acceptable:
+
+        ```python
+            async def method_ellipsis(self) -> None:
+                ...
+
+            async def method_pass(self) -> None:
+                pass
+
+            async def method_docstring(self) -> None:
+                '''This is a docstring'''
+        ```
+
+    Args:
+        func (_SourceObjectType): The method
+
+    Returns:
+        bool: Whether the function is empty and should be auto-executed
+    """
     src = dedent(getsource(func))
     tree = parse(src)
 

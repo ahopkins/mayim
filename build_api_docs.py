@@ -6,6 +6,7 @@ from pydoc_markdown.contrib.loaders.python import PythonLoader
 from pydoc_markdown.contrib.renderers.markdown import MarkdownRenderer
 from pydoc_markdown.contrib.processors.google import GoogleProcessor
 from pydoc_markdown.contrib.processors.filter import FilterProcessor
+from pydoc_markdown.contrib.processors.crossref import CrossrefProcessor
 import docspec_python
 import docspec
 
@@ -84,6 +85,8 @@ renderer = MayimRenderer(
     insert_header_anchors=False,
     render_page_title=True,
     descriptive_class_title=False,
+    signature_code_block=False,
+    use_fixed_header_levels=False,
 )
 
 
@@ -92,6 +95,7 @@ renderer.init(context)
 
 modules = list(sorted(loader.load(), key=attrgetter("name")))
 resolver = renderer.get_resolver(modules)
+CrossrefProcessor().process(modules, resolver)
 GoogleProcessor().process(modules, resolver)
 MayimFilter(
     documented_only=False,

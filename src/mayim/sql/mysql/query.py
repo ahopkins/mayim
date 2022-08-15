@@ -1,10 +1,10 @@
 import re
 
 from mayim.exception import MayimError
-from mayim.impl.sql.query import ParamType, SQLQuery
+from mayim.sql.query import ParamType, SQLQuery
 
 
-class PostgresQuery(SQLQuery):
+class MysqlQuery(SQLQuery):
     __slots__ = ("name", "text", "param_type")
     PATTERN_POSITIONAL_PARAMETER = re.compile(r"%s")
     PATTERN_KEYWORD_PARAMETER = re.compile(r"%\([a-z_][a-z0-9_]*\)")

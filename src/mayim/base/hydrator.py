@@ -3,6 +3,8 @@ from typing import Any, Dict, List, Type, Union
 
 
 class Hydrator:
+    """Description"""
+
     fallback = dict
 
     def _make(self, model: Type[object]):
@@ -18,6 +20,7 @@ class Hydrator:
     def hydrate(
         self, data: Dict[str, Any], model: Type[object] = Parameter.empty
     ):
+        """Some information"""
         if model is Parameter.empty:
             model = self.fallback
         elif model in (str, int, float, bool):

@@ -50,7 +50,7 @@ class InterfaceRegistry:
         cls._singleton._interfaces = set()
 
 
-class LazySQLRegistry:
+class LazyQueryRegistry:
     _singleton = None
     _queries: DefaultDict[str, Dict[str, str]]
 

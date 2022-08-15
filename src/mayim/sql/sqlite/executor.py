@@ -1,22 +1,25 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Sequence
+from sqlite3 import Cursor
+from typing import Any, Dict, Optional, Sequence, Tuple
 
-from mayim.impl.sql.postgres.query import PostgresQuery
+from mayim.sql.sqlite.query import SQLiteQuery
 
 from ..executor import SQLExecutor
 
 try:
-    from psycopg.rows import dict_row
+    import aiosqlite  # noqa
 
-    POSTGRES_ENABLED = True
+    AIOSQLITE_ENABLED = True
 except ModuleNotFoundError:
-    POSTGRES_ENABLED = False
+    AIOSQLITE_ENABLED = False
 
 
-class PostgresExecutor(SQLExecutor):
-    ENABLED = POSTGRES_ENABLED
-    QUERY_CLASS = PostgresQuery
+class SQLiteExecutor(SQLExecutor):
+    ENABLED = AIOSQLITE_ENABLED
+    QUERY_CLASS = SQLiteQuery
+    POSITIONAL_SUB = r"?"
+    KEYWORD_SUB = r":\2"
 
     async def _run_sql(
         self,
@@ -30,9 +33,13 @@ class PostgresExecutor(SQLExecutor):
         method_name = self._get_method(as_list=as_list)
         async with self.pool.connection() as conn:
             exec_values = list(posargs) if posargs else params
+            conn.row_factory = self.dict_factory
             cursor = await conn.execute(query, exec_values)
             if no_result:
                 return None
-            cursor.row_factory = dict_row
             raw = await getattr(cursor, method_name)()
             return raw
+
+    @staticmethod
+    def dict_factory(cursor: Cursor, row: Tuple[Any, ...]) -> Dict[str, Any]:
+        return {val[0]: row[idx] for idx, val in enumerate(cursor.description)}

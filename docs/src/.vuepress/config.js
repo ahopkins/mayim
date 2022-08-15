@@ -1,12 +1,14 @@
+const { apiPages } = require("./apiPages");
 const { description } = require('../../package')
-const pages = [
-            '',
-            'install',
-            'basics',
-            'sqlfiles',
-            'simple',
-            'executors',
-            'hydrators',
+const guidePages = [
+            '/guide/',
+            '/guide/install',
+            '/guide/basics',
+            '/guide/sqlfiles',
+            '/guide/simple',
+            '/guide/executors',
+            '/guide/hydrators',
+            '/guide/extensions',
           ]
 module.exports = {
   /**
@@ -41,6 +43,7 @@ module.exports = {
     docsDir: '',
     editLinkText: '',
     lastUpdated: false,
+    sidebarDepth: 2,
     nav: [
       {
         text: 'Guide',
@@ -67,7 +70,24 @@ module.exports = {
         {
           title: 'Guide',
           collapsable: false,
-          children: pages
+          children: guidePages
+        },
+        {
+          title: 'API Docs',
+          collapsable: true,
+          children: apiPages
+        }
+      ],
+      '/api/': [
+        {
+          title: 'Guide',
+          collapsable: true,
+          children: guidePages
+        },
+        {
+          title: 'API Docs',
+          collapsable: false,
+          children: apiPages
         }
       ],
     }
@@ -80,5 +100,9 @@ module.exports = {
     '@vuepress/plugin-back-to-top',
     '@vuepress/plugin-medium-zoom',
     "tabs",
+    [
+      "vuepress-plugin-code-copy",
+      { color: "#5dadec", backgroundTransition: false },
+    ],
   ]
 }

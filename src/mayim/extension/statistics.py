@@ -2,8 +2,8 @@ from collections import defaultdict
 from inspect import isclass
 from typing import DefaultDict
 
-from mayim.impl.sql.executor import SQLExecutor
 from mayim.registry import Registry
+from mayim.sql.executor import SQLExecutor
 
 
 class SQLCounterMixin(SQLExecutor):

@@ -1,7 +1,7 @@
 import re
 
 from mayim.exception import MayimError
-from mayim.impl.sql.query import ParamType, SQLQuery
+from mayim.sql.query import ParamType, SQLQuery
 
 
 class SQLiteQuery(SQLQuery):

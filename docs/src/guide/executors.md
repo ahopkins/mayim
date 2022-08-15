@@ -66,12 +66,12 @@ async def run():
 
 ### Implied registration
 
-On the frontpage example, we instantiated our executor before calling `Mayim`, and **never** explicitly loaded the class (or instance). This is fine *only if it is instantiated before the `Mayim` object*. Because of this "gotcha", this implied registration option is not the recommended approach.
+On the frontpage example, we instantiated our executor before calling `Mayim`, and **never** explicitly loaded the class (or instance). This implie registration is fine *only if it is instantiated before the `Mayim` object*. Because of this "gotcha", this option is not the recommended approach.
 
 
 ### Global registration with `@register`
 
-You also have the option of wrapping your `Executor` instance with `@register`. This will automatically add the `Executor` to the registry without having to manually load it later.
+You also have the option of wrapping your `Executor` instance with `@register`. This will automatically add the `Executor` to the registry without having to manually load it later. This is more explicit (and therefore preferred) than implied registration.
 
 ```python
 from mayim import PostgresExecutor, register
@@ -90,7 +90,7 @@ async def run():
 ```
 
 ::: warning
-Be careful with this method. If you use it you may need to pat close attention to your import ordering. That is because you will need to either: (1) instantiate `Mayim`, or (2) run `mayim.load` sometime after the `Executor` has been imported.
+Be careful with this method. If you use it you may need to pay close attention to your import ordering. That is because you will need to either: (1) instantiate `Mayim`, or (2) run `mayim.load` sometime after the `Executor` has been imported.
 
 If you are using `@register` and your queries are not running as expected, a first place to check is to make sure that your imports are properly ordered.
 :::
@@ -124,11 +124,12 @@ async def handler(request: Request):
 Sometimes you may decide that you do not want to have to [load SQL from files](sqlfiles). In this case, you can define the SQL in your Python code.
 
 ```python
-from mayim import PostgresExecutor, sql
+from mayim import PostgresExecutor, query
 
 class ItemExecutor(PostgresExecutor):
-    @sql(
-        """SELECT *
+    @query(
+        """
+        SELECT *
         FROM items
         WHERE item_id = $item_id;
         """
@@ -152,10 +153,32 @@ class CityExecutor(PostgresExecutor):
             query += "WHERE id = $ident"
         else:
             query += "WHERE name = $ident"
-        return await self.execute(query, as_list=False, params={"ident": ident})
+        return await self.execute(
+            query,
+            as_list=False,
+            allow_none=False,
+            params={"ident": ident}
+        )
 ```
 
-*FYI - `as_list` defaults to `False`. It is shown here just as an example that you may need to be explicit about passing this argument if you expect to return a `list`. Once you have dropped down into executing your own code, you are responsible for telling Mayim if it needs to return a `list` or a single instance.*
+*FYI - `as_list` defaults to `False`. It is shown here just as an example that you may need to be explicit about passing this argument if you expect to return a `list`. Once you have dropped down into executing your own code, you are responsible for telling Mayim if it needs to return a `list` or a single instance. Similarly, `allow_none` also defaults to `False` and is shown for demonstration purposes here.*
+
+### Query fragments
+
+What if you have some really big query fragments, or some fragment that needs to be used in a lot of places? For example, you might have a large select statement that you want to reuse. Wouldn't it be nice if you could define those in `.sql` files and compose them? Of course!
+
+```python
+class CityExecutor(PostgresExecutor):
+    generic_prefix: str = "fragment_"
+
+    async def select_city(self, ident: int | str, by_id: bool) -> City:
+        query = self.get_query("fragment_select_city")
+        if by_id:
+            query += self.get_query("fragment_where_id")
+        else:
+            query += self.get_query("fragment_where_name")
+        return await self.execute(query, params={"ident": ident})
+```
 
 ## Low level `run_sql`
 
@@ -173,6 +196,8 @@ class CityExecutor(PostgresExecutor):
 ## Fetching query
 
 In the previous example, you may have noticed `query = self.get_query()`. This method allows you to fetch the predefined query that *would* have been executed. It is helpful in cases where you need to add some more custom logic to your method, but still want to preload your SQL from a `.sql` file.
+
+When you call `get_query()` with no arguments, it will fetch the query that Mayim thinks should have been run. This is based upon the method name. You can explicitly pass it a name to retrieve that as seen in the [query fragments](#query-fragments) section.
 
 ## Custom pools
 
@@ -253,4 +278,23 @@ class CityExecutor(PostgresExecutor):
         hydrator = self.get_hydrator()
         results = await self.run_sql(query.text, params={"city_id": city_id})
         return [hydrator.hydrate(city, City) for city in results]
+```
+
+## Empty methods in STRICT mode
+
+By default, Mayim will startup in STRICT mode. You can disable this at instantiation, or `load`:
+
+```python
+mayim = Mayim(..., strict=False)
+# OR
+mayim.load(..., strict=False)
+```
+
+What does it do, and why would you use it? When enabled, Mayim will raise an exception when it encounters an empty Executor method without a defined query. So, if you have a method without any code inside of it, without a `@query` decorator, and without a `.sql` file, you will receive an exception.
+
+```python
+# Loading this executor would raise an exception in STRICT mode
+class CityExecutor(PostgresExecutor):
+    async def select_query_does_not_exist(self) -> None:
+        ...
 ```

@@ -1,13 +1,13 @@
 from inspect import cleandoc
 
 from mayim.base.hydrator import Hydrator
-from mayim.registry import LazyHydratorRegistry, LazySQLRegistry, Registry
+from mayim.registry import LazyHydratorRegistry, LazyQueryRegistry, Registry
 
 
-def sql(query: str):
+def query(query: str):
     def decorator(f):
         *_, class_name, method_name = f.__qualname__.rsplit(".", 2)
-        LazySQLRegistry.add(class_name, method_name, cleandoc(query))
+        LazyQueryRegistry.add(class_name, method_name, cleandoc(query))
         return f
 
     return decorator

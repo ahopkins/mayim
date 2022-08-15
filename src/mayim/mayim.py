@@ -6,9 +6,9 @@ from urllib.parse import urlparse
 from mayim.base import Executor, Hydrator
 from mayim.base.interface import BaseInterface
 from mayim.exception import MayimError
-from mayim.impl.sql.postgres.interface import PostgresPool
 from mayim.lazy.interface import LazyPool
 from mayim.registry import InterfaceRegistry, Registry
+from mayim.sql.postgres.interface import PostgresPool
 
 T = TypeVar("T", bound=Executor)
 DEFAULT_INTERFACE = PostgresPool
@@ -20,12 +20,19 @@ class Mayim:
         *,
         executors: Optional[Sequence[Union[Type[Executor], Executor]]] = None,
         dsn: str = "",
+        db_path: str = "",
         hydrator: Optional[Hydrator] = None,
         pool: Optional[BaseInterface] = None,
-        strict: bool = False,
+        strict: bool = True,
     ):
         if pool and dsn:
             raise MayimError("Conflict with pool and DSN")
+
+        if dsn and db_path:
+            raise MayimError("Conflict with DSN and DB path")
+
+        if db_path and not dsn:
+            dsn = db_path
 
         if not pool and dsn:
             pool_type = self._get_pool_type(dsn)
@@ -36,7 +43,7 @@ class Mayim:
                 pool.set_derivative(pool_type)
                 pool.set_dsn(dsn)
             else:
-                pool = pool_type(dsn=dsn)
+                pool = pool_type(dsn)
 
         if not executors:
             executors = []
@@ -105,6 +112,7 @@ class Mayim:
 
     def _get_pool_type(self, dsn: str) -> Type[BaseInterface]:
         parts = urlparse(dsn)
+
         for interface_type in BaseInterface.registered_interfaces:
             if parts.scheme == interface_type.scheme:
                 return interface_type

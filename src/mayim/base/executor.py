@@ -3,7 +3,6 @@ from __future__ import annotations
 from ast import AsyncFunctionDef, Constant, Expr, FunctionDef, Pass, parse
 from contextvars import ContextVar
 from inspect import (
-    _SourceObjectType,
     cleandoc,
     getdoc,
     getmodule,
@@ -244,7 +243,7 @@ class Executor(Generic[T]):
         return base
 
 
-def is_auto_exec(func: _SourceObjectType) -> bool:
+def is_auto_exec(func) -> bool:
     """Check if a method should be auto-executed.
 
     Example:
@@ -282,7 +281,8 @@ def is_auto_exec(func: _SourceObjectType) -> bool:
                 body[0].value.value is Ellipsis
                 or (
                     isinstance(body[0].value.value, str)
-                    and cleandoc(body[0].value.value) == cleandoc(getdoc(func))
+                    and cleandoc(body[0].value.value)
+                    == cleandoc(getdoc(func) or "")
                 )
             )
         )

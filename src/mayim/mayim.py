@@ -109,6 +109,33 @@ class Mayim:
 
     @staticmethod
     def get(executor: Type[T]) -> T:
+        """Fetch an instance of an executor
+
+        This is useful when there you wish to retrieve the registered instance
+        of an executor. Can be used in various parts of
+        an application without having to pass variables.
+
+        Example:
+
+            ```python
+            from mayim import Mayim
+            from my.package.executors import AwesomeExecutor
+
+            async def some_func():
+                executor = Mayim.get(AwesomeExecutor)
+                awesomeness = await executor.select_something_awesome()
+                ...
+            ```
+
+        Args:
+            executor (Type[T]): The class of the registered executor instance
+
+        Raises:
+            MayimError: If the passed executor has not been registered
+
+        Returns:
+            Executor: The executor instance
+        """
         registry = Registry()
         try:
             instance = registry[executor.__name__]

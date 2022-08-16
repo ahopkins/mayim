@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Type, Union
 class Hydrator:
     """Description"""
 
-    fallback = dict
+    fallback: Type[object] = dict
 
     def _make(self, model: Type[object]):
         def factory(data: Union[Dict[str, Any], List[Dict[str, Any]]]):

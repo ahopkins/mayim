@@ -37,6 +37,41 @@ class MayimRenderer(MarkdownRenderer):
                 self._render_root_level_object(fp, level, obj)
         else:
             super()._render_object(fp, level, obj)
+        if isinstance(obj, docspec.Class):
+            assert isinstance(obj.parent, docspec.Module)
+            module = import_module(obj.parent.name)
+            cls = getattr(module, obj.name)
+            resolver = MayimMarkdownReferenceResolver(global_=True)
+
+            parent_links = []
+            for base in cls.__mro__:
+                resolved = None
+                fullname = f"{base.__module__}.{base.__qualname__}"
+                if fullname.startswith("mayim") and base.__name__ != obj.name:
+                    resolved = resolver.resolve_reference(
+                        suite, obj, fullname, [docspec.Indirection]
+                    )
+                    if resolved:
+                        module_name, member_name = self._resolve_name(
+                            resolved
+                        ).rsplit(".", 1)
+                        parent_links.append(
+                            f"[{resolved.name}](./{module_name}.html"
+                            f"#{member_name})"
+                        )
+
+            if parent_links:
+                parents = ", ".join(parent_links)
+                fp.write(f"**Parents**: {parents}\n\n")
+
+        if (
+            obj.parent
+            and isinstance(obj.parent, docspec.Class)
+            and isinstance(obj, docspec.Variable)
+        ):
+            if obj.value:
+                default = obj.value.replace("\n", "")
+                fp.write(f"**Default**: `{default}`\n\n")
 
     def _render_root_level_object(
         self, fp: TextIO, level: int, obj: docspec.Indirection
@@ -63,35 +98,6 @@ class MayimRenderer(MarkdownRenderer):
 
         fp.write(f"See [{full_name}](./{module_name}.html#{member_name})\n\n")
 
-    def _render_header(self, fp: TextIO, level: int, obj: docspec.ApiObject):
-        super()._render_header(fp, level, obj)
-        if isinstance(obj, docspec.Class):
-            assert isinstance(obj.parent, docspec.Module)
-            module = import_module(obj.parent.name)
-            cls = getattr(module, obj.name)
-            resolver = MayimMarkdownReferenceResolver(global_=True)
-
-            parent_links = []
-            for base in cls.__mro__:
-                resolved = None
-                fullname = f"{base.__module__}.{base.__qualname__}"
-                if fullname.startswith("mayim") and base.__name__ != obj.name:
-                    resolved = resolver.resolve_reference(
-                        suite, obj, fullname, [docspec.Indirection]
-                    )
-                    if resolved:
-                        module_name, member_name = self._resolve_name(
-                            resolved
-                        ).rsplit(".", 1)
-                        parent_links.append(
-                            f"[{resolved.name}](./{module_name}.html"
-                            f"#{member_name})"
-                        )
-
-            if parent_links:
-                parents = ", ".join(parent_links)
-                fp.write(f"Parents: {parents}\n\n")
-
     def _resolve_name(self, obj: docspec.ApiObject) -> str:
         name = ""
         if obj.path:
@@ -115,7 +121,6 @@ class MayimMarkdownReferenceResolver(MarkdownReferenceResolver):
         ref: str,
         exclusions: Optional[List[Type[docspec.ApiObject]]] = None,
     ) -> Optional[docspec.ApiObject]:
-        """Resolves the reference by searching in the members of *scope* or any of its parents."""
         ref_split = ref.split(".")
 
         resolved = self._resolve_local_reference(scope, ref_split)
@@ -210,10 +215,13 @@ renderer = MayimRenderer(
     insert_header_anchors=False,
     render_page_title=True,
     descriptive_class_title=False,
-    signature_code_block=False,
-    classdef_code_block=False,
+    signature_code_block=True,
     use_fixed_header_levels=False,
     source_linker=source_linker,
+    code_headers=True,
+    render_typehint_in_data_header=True,
+    signature_with_decorators=True,
+    render_toc=True,
 )
 
 source_linker.init(context)
@@ -247,6 +255,7 @@ for module in modules:
 
 renderer.render_page_title = False
 renderer.use_fixed_header_levels = True
+renderer.render_toc = False
 renderer.header_level_by_type["Indirection"] = 3
 main_modules = [module for module in modules if module.name == "mayim"]
 file_path = "docs/src/api/index.md"

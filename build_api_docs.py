@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import html
 from importlib import import_module
 from operator import attrgetter
+import re
 from typing import List, Optional, TextIO, Type
 from pydoc_markdown.interfaces import Context, SourceLinker
 from pydoc_markdown.contrib.loaders.python import PythonLoader
@@ -16,8 +17,8 @@ from pydoc_markdown.util.docspec import ApiSuite
 import docspec_python
 import docspec
 
-from rich import print
-
+slugify = re.compile(r"[^a-zA-Z0-9_\-]")
+dedup = re.compile(r"(-)\1+")
 WHITELIST = ("__init__",)
 
 
@@ -89,7 +90,11 @@ class MayimRenderer(MarkdownRenderer):
                 else item.docstring.content
             )
             lines = docstring.splitlines()
-            summary = lines[0]
+            summary = ""
+            for line in lines:
+                if not line:
+                    break
+                summary += f" {line}"
             fp.write(f"{summary}\n\n")
 
         fp.write("```{}\n".format("python" if self.code_lang else ""))
@@ -110,6 +115,25 @@ class MayimRenderer(MarkdownRenderer):
         if isinstance(obj, docspec.Module) and name.startswith("."):
             name = f"mayim.{name}"
         return name
+
+    def _render_toc(self, fp: TextIO, level: int, obj: docspec.ApiObject):
+        if level > self.toc_maxdepth:
+            return
+        title = self._slugify(self._get_title(obj))
+        display = self._escape(obj.name)
+        if not self.add_module_prefix and isinstance(obj, docspec.Module):
+            display = display.split(".")[-1]
+        fp.write("  " * level + "* [{}](#{})\n".format(display, title))
+        level += 1
+        for child in sorted(
+            getattr(obj, "members", []), key=attrgetter("name")
+        ):
+            self._render_toc(fp, level, child)
+
+    @staticmethod
+    def _slugify(text: str) -> str:
+        slug = slugify.sub("-", text.lower())
+        return dedup.sub("-", slug).strip("-")
 
 
 @dataclass

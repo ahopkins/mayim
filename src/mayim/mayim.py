@@ -117,15 +117,15 @@ class Mayim:
 
         Example:
 
-            ```python
-            from mayim import Mayim
-            from my.package.executors import AwesomeExecutor
+        ```python
+        from mayim import Mayim
+        from my.package.executors import AwesomeExecutor
 
-            async def some_func():
-                executor = Mayim.get(AwesomeExecutor)
-                awesomeness = await executor.select_something_awesome()
-                ...
-            ```
+        async def some_func():
+            executor = Mayim.get(AwesomeExecutor)
+            awesomeness = await executor.select_something_awesome()
+            ...
+        ```
 
         Args:
             executor (Type[T]): The class of the registered executor instance

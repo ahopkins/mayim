@@ -15,6 +15,8 @@ except ModuleNotFoundError:
 
 
 class PostgresExecutor(SQLExecutor):
+    """Executor for interfacing with a Postgres database"""
+
     ENABLED = POSTGRES_ENABLED
     QUERY_CLASS = PostgresQuery
 

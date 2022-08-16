@@ -16,6 +16,8 @@ except ModuleNotFoundError:
 
 
 class SQLiteExecutor(SQLExecutor):
+    """Executor for interfacing with a SQLite database"""
+
     ENABLED = AIOSQLITE_ENABLED
     QUERY_CLASS = SQLiteQuery
     POSITIONAL_SUB = r"?"
@@ -33,7 +35,7 @@ class SQLiteExecutor(SQLExecutor):
         method_name = self._get_method(as_list=as_list)
         async with self.pool.connection() as conn:
             exec_values = list(posargs) if posargs else params
-            conn.row_factory = self.dict_factory
+            conn.row_factory = self._dict_factory
             cursor = await conn.execute(query, exec_values)
             if no_result:
                 return None
@@ -41,5 +43,5 @@ class SQLiteExecutor(SQLExecutor):
             return raw
 
     @staticmethod
-    def dict_factory(cursor: Cursor, row: Tuple[Any, ...]) -> Dict[str, Any]:
+    def _dict_factory(cursor: Cursor, row: Tuple[Any, ...]) -> Dict[str, Any]:
         return {val[0]: row[idx] for idx, val in enumerate(cursor.description)}

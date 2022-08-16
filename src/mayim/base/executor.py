@@ -263,18 +263,18 @@ def is_auto_exec(func) -> bool:
 
     Example:
 
-        Any of the following are acceptable:
+    Any of the following are acceptable:
 
-        ```python
-            async def method_ellipsis(self) -> None:
-                ...
+    ```python
+    async def method_ellipsis(self) -> None:
+        ...
 
-            async def method_pass(self) -> None:
-                pass
+    async def method_pass(self) -> None:
+        pass
 
-            async def method_docstring(self) -> None:
-                '''This is a docstring'''
-        ```
+    async def method_docstring(self) -> None:
+        '''This is a docstring'''
+    ```
 
     Args:
         func: The function or method being checked

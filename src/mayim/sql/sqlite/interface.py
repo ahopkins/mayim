@@ -15,6 +15,8 @@ except ModuleNotFoundError:
 
 
 class SQLitePool(BaseInterface):
+    """Interface for connecting to a SQLite database"""
+
     scheme = ""
 
     def __init__(self, db_path: str):
@@ -29,14 +31,27 @@ class SQLitePool(BaseInterface):
             )
 
     async def open(self):
+        """Open connections to the pool"""
         self._db = await aiosqlite.connect(self._db_path)
         self._db.row_factory = aiosqlite.Row
 
     async def close(self):
+        """Close connections to the pool"""
         await self._db.close()
 
     @asynccontextmanager
     async def connection(self, timeout: Optional[float] = None):
+        """Obtain a connection to the database
+
+        Args:
+            timeout (float, optional): _Not implemented_. Defaults to `None`.
+
+        Returns:
+            AsyncIterator[Connection]: Iterator that will yield a connection
+
+        Yields:
+            Iterator[AsyncIterator[Connection]]: A database connection
+        """
         close_when_done = False
         if not self._db:
             close_when_done = True

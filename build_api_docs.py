@@ -128,7 +128,8 @@ class MayimRenderer(MarkdownRenderer):
         for child in sorted(
             getattr(obj, "members", []), key=attrgetter("name")
         ):
-            self._render_toc(fp, level, child)
+            if not isinstance(child, docspec.Indirection):
+                self._render_toc(fp, level, child)
 
     @staticmethod
     def _slugify(text: str) -> str:

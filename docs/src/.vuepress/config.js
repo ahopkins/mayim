@@ -46,19 +46,26 @@ module.exports = {
     sidebarDepth: 2,
     nav: [
       {
-        text: 'Guide',
+        text: 'Documentation',
         items: [
-          {"text": "Installation", link: "/guide/install"},
-          {"text": "Basics", link: "/guide/basics"},
-          {"text": "Writing SQL files", link: "/guide/sqlfiles"},
-          {"text": "Full simple example", link: "/guide/simple"},
-          {"text": "Creating Executors", link: "/guide/executors"},
-          {"text": "Custom Hydrators", link: "/guide/hydrators"},
+          {
+            text: "User Guide",
+            items: [
+              {"text": "Installation", link: "/guide/install"},
+              {"text": "Basics", link: "/guide/basics"},
+              {"text": "Writing SQL files", link: "/guide/sqlfiles"},
+              {"text": "Full simple example", link: "/guide/simple"},
+              {"text": "Creating Executors", link: "/guide/executors"},
+              {"text": "Custom Hydrators", link: "/guide/hydrators"},
+            ]
+          },
+          {
+            text: "API Docs",
+            items: [
+              {"text": "Mayim Package", link: "/api/index"},
+            ]
+          }
         ],
-      },
-      {
-        text: 'GitHub',
-        link: 'https://github.com/ahopkins/mayim'
       },
       {
         text: 'Support/Discussion',

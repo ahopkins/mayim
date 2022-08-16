@@ -29,7 +29,9 @@ T = TypeVar("T", bound=Query)
 
 class Executor(Generic[T]):
     """
-    Base class for creating executors
+    Base class for creating executors, which serve as the main interface for
+    interacting with a data source. Likely you will want to create a subclass
+    from one of its subclasses and not directly from this base class.
     """
 
     _queries: Dict[str, T]
@@ -212,6 +214,14 @@ class Executor(Generic[T]):
 
     @staticmethod
     def is_query_name(obj) -> bool:
+        """Whether an object is a valid query name
+
+        Args:
+            obj (Any): Depends upon which subclass is being implemented
+
+        Returns:
+            bool: is it valid
+        """
         return False
 
     @staticmethod
@@ -220,6 +230,17 @@ class Executor(Generic[T]):
 
     @classmethod
     def get_base_path(cls, directory_name: Optional[str]) -> Path:
+        """Get the base path for where queries will be located
+
+        Args:
+            directory_name (str, optional): A starting directory
+
+        Raises:
+            MayimError: When a module does not exist
+
+        Returns:
+            Path: The base path
+        """
         module = getmodule(cls)
         if not module or not module.__file__:
             raise MayimError(f"Could not locate module for {cls}")

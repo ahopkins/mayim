@@ -22,6 +22,8 @@ except ModuleNotFoundError:
     SANIC_INSTALLED = False
     Extension = type("Extension", (), {})  # type: ignore
     Extend = type("Extend", (), {})  # type: ignore
+    Default = type("Default", (), {})  # type: ignore
+    _default = Default()
 
 
 class SanicMayimExtension(Extension):

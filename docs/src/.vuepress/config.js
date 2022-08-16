@@ -11,31 +11,13 @@ const guidePages = [
             '/guide/extensions',
           ]
 module.exports = {
-  /**
-   * Ref：https://v1.vuepress.vuejs.org/config/#title
-   */
-  title: 'Mayim',
-  /**
-   * Ref：https://v1.vuepress.vuejs.org/config/#description
-   */
+  title: '💧 Mayim',
   description: description,
-
-  /**
-   * Extra tags to be injected to the page HTML `<head>`
-   *
-   * ref：https://v1.vuepress.vuejs.org/config/#head
-   */
   head: [
-    ['meta', { name: 'theme-color', content: '#50a6b5' }],
+    ['meta', { name: 'theme-color', content: '#5dadec' }],
     ['meta', { name: 'apple-mobile-web-app-capable', content: 'yes' }],
     ['meta', { name: 'apple-mobile-web-app-status-bar-style', content: 'black' }]
   ],
-
-  /**
-   * Theme configuration, here is the default theme configuration for VuePress.
-   *
-   * ref：https://v1.vuepress.vuejs.org/theme/default-theme-config.html
-   */
   base: '/mayim/',
   themeConfig: {
     repo: 'https://github.com/ahopkins/mayim',

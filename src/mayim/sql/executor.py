@@ -43,6 +43,14 @@ class SQLExecutor(Executor[SQLQuery]):
         "update_",
         "delete_",
     ]
+    """Prefixes used to identify class methods and `.sql` files to load
+
+    Example:
+
+        ```python
+        SQLExecutor.verb_prefixes = ["create_","read_","update_","delete_"]
+        ```
+    """
 
     def execute(
         self,

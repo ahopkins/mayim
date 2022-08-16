@@ -15,6 +15,8 @@ except ModuleNotFoundError:
 
 
 class MysqlExecutor(SQLExecutor):
+    """Executor for interfacing with a MySQL database"""
+
     ENABLED = MYSQL_ENABLED
     QUERY_CLASS = MysqlQuery
 

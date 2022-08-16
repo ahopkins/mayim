@@ -8,3 +8,19 @@
   max-width 450px!important
 
 @require '~vuepress-plugin-tabs/dist/themes/default.styl'
+
+.theme-default-content.content__default h1,
+.theme-default-content.content__default h2,
+.theme-default-content.content__default h3,
+.theme-default-content.content__default h4,
+.theme-default-content.content__default h5,
+.theme-default-content.content__default h6
+  margin-left -1.5rem
+
+
+.sidebar-sub-header .sidebar-sub-header a.sidebar-link
+  color $fadedTextColor
+  font-style italic
+
+  &:hover
+    color $accentColor

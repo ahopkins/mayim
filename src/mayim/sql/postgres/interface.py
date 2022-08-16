@@ -16,6 +16,8 @@ except ModuleNotFoundError:
 
 
 class PostgresPool(BaseInterface):
+    """Interface for connecting to a Postgres database"""
+
     scheme = "postgres"
 
     def _setup_pool(self):
@@ -27,15 +29,29 @@ class PostgresPool(BaseInterface):
         self._pool = AsyncConnectionPool(self.full_dsn)
 
     async def open(self):
+        """Open connections to the pool"""
         await self._pool.open()
 
     async def close(self):
+        """Close connections to the pool"""
         await self._pool.close()
 
     @asynccontextmanager
     async def connection(
         self, timeout: Optional[float] = None
     ) -> AsyncIterator[AsyncConnection]:
+        """Obtain a connection to the database
+
+        Args:
+            timeout (float, optional): Time before an error is raised on
+                failure to connect. Defaults to `None`.
+
+        Returns:
+            AsyncIterator[Connection]: Iterator that will yield a connection
+
+        Yields:
+            Iterator[AsyncIterator[Connection]]: A database connection
+        """
         existing = self._connection.get(None)
         if existing:
             yield existing

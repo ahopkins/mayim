@@ -16,6 +16,8 @@ except ModuleNotFoundError:
 
 
 class MysqlPool(BaseInterface):
+    """Interface for connecting to a MySQL database"""
+
     scheme = "mysql"
 
     def _setup_pool(self):
@@ -33,9 +35,11 @@ class MysqlPool(BaseInterface):
         )
 
     async def open(self):
+        """Open connections to the pool"""
         self._pool = await self._pool
 
     async def close(self):
+        """Close connections to the pool"""
         self._pool.close()
         await self._pool.wait_closed()
 
@@ -43,6 +47,17 @@ class MysqlPool(BaseInterface):
     async def connection(
         self, timeout: Optional[float] = None
     ) -> AsyncIterator[Connection]:
+        """Obtain a connection to the database
+
+        Args:
+            timeout (float, optional): _Not implemented_. Defaults to `None`.
+
+        Returns:
+            AsyncIterator[Connection]: Iterator that will yield a connection
+
+        Yields:
+            Iterator[AsyncIterator[Connection]]: A database connection
+        """
         existing = self.existing_connection()
         if existing:
             yield existing

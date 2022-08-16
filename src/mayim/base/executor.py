@@ -2,13 +2,7 @@ from __future__ import annotations
 
 from ast import AsyncFunctionDef, Constant, Expr, FunctionDef, Pass, parse
 from contextvars import ContextVar
-from inspect import (
-    cleandoc,
-    getdoc,
-    getmodule,
-    getsource,
-    stack,
-)
+from inspect import cleandoc, getdoc, getmodule, getsource, stack
 from pathlib import Path
 from textwrap import dedent
 from typing import (
@@ -262,7 +256,7 @@ def is_auto_exec(func) -> bool:
         ```
 
     Args:
-        func (_SourceObjectType): The method
+        func: The function or method being checked
 
     Returns:
         bool: Whether the function is empty and should be auto-executed

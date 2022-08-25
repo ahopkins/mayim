@@ -6,6 +6,7 @@ const guidePages = [
             '/guide/basics',
             '/guide/sqlfiles',
             '/guide/simple',
+            '/guide/pydantic',
             '/guide/executors',
             '/guide/hydrators',
             '/guide/extensions',
@@ -19,6 +20,14 @@ module.exports = {
     ['meta', { name: 'apple-mobile-web-app-status-bar-style', content: 'black' }]
   ],
   base: '/mayim/',
+  markdown: {
+    anchor: {
+      permalink: true,
+    },
+    extendMarkdown: (md) => {
+      md.use(require("markdown-it-multicolumn").default);
+    },
+  },
   themeConfig: {
     repo: 'https://github.com/ahopkins/mayim',
     editLinks: false,
@@ -37,6 +46,7 @@ module.exports = {
               {"text": "Basics", link: "/guide/basics"},
               {"text": "Writing SQL files", link: "/guide/sqlfiles"},
               {"text": "Full simple example", link: "/guide/simple"},
+              {"text": "Working with Pydantic", link: "/guide/pydantic"},
               {"text": "Creating Executors", link: "/guide/executors"},
               {"text": "Custom Hydrators", link: "/guide/hydrators"},
             ]

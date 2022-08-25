@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "markdown-it-multicolumn": "^0.1.5"
+  }
+}

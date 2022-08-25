@@ -6,9 +6,9 @@ const guidePages = [
             '/guide/basics',
             '/guide/sqlfiles',
             '/guide/simple',
-            '/guide/pydantic',
             '/guide/executors',
             '/guide/hydrators',
+            '/guide/pydantic',
             '/guide/extensions',
           ]
 module.exports = {
@@ -46,9 +46,10 @@ module.exports = {
               {"text": "Basics", link: "/guide/basics"},
               {"text": "Writing SQL files", link: "/guide/sqlfiles"},
               {"text": "Full simple example", link: "/guide/simple"},
-              {"text": "Working with Pydantic", link: "/guide/pydantic"},
               {"text": "Creating Executors", link: "/guide/executors"},
               {"text": "Custom Hydrators", link: "/guide/hydrators"},
+              {"text": "Working with Pydantic", link: "/guide/pydantic"},
+              {"text": "Framework extensions", link: "/guide/extensions"},
             ]
           },
           {

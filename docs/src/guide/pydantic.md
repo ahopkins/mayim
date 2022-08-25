@@ -101,7 +101,7 @@ async def run():
     )
 ```
 
-As you would expect, we now have nice neste models:
+As you would expect, we now have nice nested models:
 
 ```python
 [

@@ -10,7 +10,7 @@ To get started, just annotate your executors with a Pydantic model.
 ```python
 import asyncio
 from typing import List, Optional
-from mayim import Mayim, PostgresExecutor, sql
+from mayim import Mayim, SQLiteExecutor, sql
 from pydantic import BaseModel
 
 

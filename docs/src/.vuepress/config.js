@@ -30,10 +30,10 @@ module.exports = {
   },
   themeConfig: {
     repo: 'https://github.com/ahopkins/mayim',
-    editLinks: false,
-    docsDir: '',
-    editLinkText: '',
-    lastUpdated: false,
+    docsDir: "docs/src",
+    docsBranch: "main",
+    editLinks: true,
+    lastUpdated: true,
     sidebarDepth: 2,
     nav: [
       {

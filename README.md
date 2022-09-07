@@ -38,7 +38,7 @@ class PersonExecutor(PostgresExecutor):
 async def run():
     executor = PersonExecutor()
     Mayim(dsn="postgres://...")
-    print(await executor.select_all_cities())
+    print(await executor.select_all_people())
 
 
 asyncio.run(run())

@@ -8,13 +8,11 @@ You can install Mayim using PIP:
 pip install mayim
 ```
 
-To get access to support for a specific data source, make sure you install the appropriate dependencies. You must
-install one of the following drivers.
+To get access to support for a specific data source, make sure you install the appropriate dependencies. You must install one of the following drivers.
 
 ## Postgres
 
 Dependencies:
-
 - [psycopg3](https://www.psycopg.org/psycopg3/)
 
 Either install it independently:
@@ -32,7 +30,6 @@ pip install mayim[postgres]
 ## MySQL
 
 Dependencies:
-
 - [asyncmy](https://github.com/long2ice/asyncmy)
 
 Either install it independently:
@@ -50,7 +47,6 @@ pip install mayim[mysql]
 ## SQLite
 
 Dependencies:
-
 - [aiosqlite](https://github.com/omnilib/aiosqlite)
 
 Either install it independently:
@@ -68,8 +64,7 @@ pip install mayim[sqlite]
 ## SQL Server
 
 Dependencies:
-
-- [aiosqlite](https://github.com/mkleehammer/pyodbc)
+- [pyodbc](https://github.com/mkleehammer/pyodbc)
 
 Either install it independently:
 

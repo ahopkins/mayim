@@ -35,7 +35,11 @@ class SQLServerPool(BaseInterface):
         url = urlparse(self._db_path)
         query = parse_qs(url.query)
         driver = query.get("DRIVER", "")
-        conn_string = f"DRIVER={driver};SERVER={url.hostname};PORT={url.port};DATABASE={url.path.strip('/')};UID={url.username};PWD={url.password}"
+        conn_string = (
+            f"DRIVER={driver};SERVER={url.hostname};PORT={url.port};"
+            f"DATABASE={url.path.strip('/')};"
+            f"UID={url.username};PWD={url.password};"
+        )
         return conn_string
 
     async def open(self):

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, Optional, Sequence
 
 from mayim.sql.sqlserver.query import SQLServerQuery
+
 from ..executor import SQLExecutor
 
 try:
@@ -22,13 +23,13 @@ class SQLServerExecutor(SQLExecutor):
     KEYWORD_SUB = r":\2"
 
     async def _run_sql(
-            self,
-            query: str,
-            name: str = "",
-            as_list: bool = False,
-            no_result: bool = False,
-            posargs: Optional[Sequence[Any]] = None,
-            params: Optional[Dict[str, Any]] = None,
+        self,
+        query: str,
+        name: str = "",
+        as_list: bool = False,
+        no_result: bool = False,
+        posargs: Optional[Sequence[Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
     ):
         method_name = self._get_method(as_list=as_list)
         async with self.pool.connection() as conn:

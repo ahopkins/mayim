@@ -41,9 +41,6 @@ class SQLServerExecutor(SQLExecutor):
 
             raw = getattr(cursor, method_name)()
 
-            if raw is None:
-                return None
-
             if not as_list:
                 return dict(zip(columns, raw))
 

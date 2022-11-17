@@ -49,7 +49,6 @@ class SQLServerExecutor(SQLExecutor):
 
             results = []
             for row in raw:
-                print(row)
                 results.append(dict(zip(columns, row)))
 
             return results

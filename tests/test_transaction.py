@@ -1,8 +1,9 @@
 from unittest.mock import AsyncMock
+
 import pytest
 
-from mayim.exception import MayimError
 from mayim import Mayim
+from mayim.exception import MayimError
 
 
 async def test_transaction(postgres_connection, item_executor):

@@ -253,7 +253,10 @@ class Mayim:
                     if (
                         isclass(executor) and issubclass(executor, SQLExecutor)
                     )
-                    or isinstance(executor, SQLExecutor)
+                    or (
+                        not isclass(executor)
+                        and isinstance(executor, SQLExecutor)
+                    )
                 )
             )
         async with AsyncExitStack() as stack:

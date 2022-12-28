@@ -156,10 +156,12 @@ class SQLExecutor(Executor[SQLQuery]):
     ):
         ...
 
-    async def rollback(self) -> None:
+    async def rollback(self, *, silent: bool = False) -> None:
         existing = self.pool.existing_connection()
         transaction = self.pool.in_transaction()
         if not existing or not transaction:
+            if silent:
+                return
             raise MayimError("Cannot rollback non-existing transaction")
         await self._rollback(existing)
 
@@ -178,7 +180,7 @@ class SQLExecutor(Executor[SQLQuery]):
             try:
                 yield
             except Exception:
-                await self.rollback()
+                await self.rollback(silent=True)
                 raise
             finally:
                 self.pool._connection.set(None)

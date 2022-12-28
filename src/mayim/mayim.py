@@ -1,4 +1,5 @@
 from asyncio import get_running_loop
+from contextlib import AsyncExitStack, asynccontextmanager
 from inspect import isclass
 from typing import Optional, Sequence, Type, TypeVar, Union
 from urllib.parse import urlparse
@@ -8,6 +9,7 @@ from mayim.base.interface import BaseInterface
 from mayim.exception import MayimError
 from mayim.lazy.interface import LazyPool
 from mayim.registry import InterfaceRegistry, Registry
+from mayim.sql.executor import SQLExecutor
 from mayim.sql.postgres.interface import PostgresPool
 
 T = TypeVar("T", bound=Executor)
@@ -237,3 +239,32 @@ class Mayim:
         """Disconnect from all database interfaces"""
         for interface in InterfaceRegistry():
             await interface.close()
+
+    @classmethod
+    @asynccontextmanager
+    async def transaction(
+        cls, *executors: Union[SQLExecutor, Type[SQLExecutor]]
+    ):
+        if not executors:
+            executors = tuple(
+                (
+                    executor
+                    for executor in Registry().values()
+                    if (
+                        isclass(executor) and issubclass(executor, SQLExecutor)
+                    )
+                    or (
+                        not isclass(executor)
+                        and isinstance(executor, SQLExecutor)
+                    )
+                )
+            )
+        async with AsyncExitStack() as stack:
+            for maybe_executor in executors:
+                executor = (
+                    cls.get(maybe_executor)
+                    if isclass(maybe_executor)
+                    else maybe_executor
+                )
+                await stack.enter_async_context(executor.transaction())
+            yield

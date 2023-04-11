@@ -18,6 +18,7 @@ URLPARSE_MAPPING = {
     "password": UrlMapping("_password", str),
     "port": UrlMapping("_port", int),
     "path": UrlMapping("_db", lambda value: value.replace("/", "")),
+    "query": UrlMapping("_query", str),
 }
 
 
@@ -52,6 +53,7 @@ class BaseInterface(ABC):
         user: Optional[str] = None,
         password: Optional[str] = None,
         db: Optional[int] = None,
+        query: Optional[str] = None,
     ) -> None:
         """DB class initialization.
 
@@ -61,6 +63,7 @@ class BaseInterface(ABC):
             port (int, optional): DB port. Defaults to 6379
             password (str, optional): DB password
             db (int, optional): DB db. Defaults to 1
+            query (str, optional): DB query parameters. Defaults to None
         """
 
         if dsn and host:
@@ -92,6 +95,7 @@ class BaseInterface(ABC):
         self._user = user
         self._password = password
         self._db = db
+        self._query = query
         self._full_dsn: Optional[str] = None
         self._connection: ContextVar[Any] = ContextVar(
             "connection", default=None
@@ -138,6 +142,7 @@ class BaseInterface(ABC):
             if self.password
             else self.dsn
         )
+        self._full_dsn += f"?{self._query}" if self._query else ""
 
     @property
     def dsn(self):

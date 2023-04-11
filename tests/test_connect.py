@@ -8,7 +8,8 @@ from mayim.sql.postgres.interface import PostgresPool
 @pytest.fixture
 def mayim(FooExecutor):
     return Mayim(
-        executors=[FooExecutor], dsn="postgres://user:password@host:1234/db"
+        executors=[FooExecutor],
+        dsn="postgres://user:password@host:1234/db?sslmode=verify-ca",
     )
 
 

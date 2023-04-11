@@ -182,10 +182,11 @@ class SQLExecutor(Executor[SQLQuery]):
             except Exception:
                 await self.rollback(silent=True)
                 raise
+            else:
+                self.pool._commit.set(True)
             finally:
                 self.pool._connection.set(None)
                 self.pool._transaction.set(False)
-                self.pool._commit.set(True)
 
     @classmethod
     def _load(cls, strict: bool) -> None:

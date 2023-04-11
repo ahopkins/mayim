@@ -52,12 +52,24 @@ class SQLitePool(BaseInterface):
         Yields:
             Iterator[AsyncIterator[Connection]]: A database connection
         """
+        existing = self.existing_connection()
         close_when_done = False
-        if not self._db:
-            close_when_done = True
-            await self.open()
 
-        yield self._db
+        if existing:
+            yield existing
+        else:
+            if not self._db:
+                close_when_done = True
+                await self.open()
+            yield self._db
+
+        existing = self.existing_connection()
+        transaction = self.in_transaction()
+        commit = self.do_commit()
+
+        if not transaction:
+            if commit:
+                await self._db.commit()  # type: ignore
 
         if close_when_done:
             await self.close()

@@ -63,7 +63,6 @@ class SQLitePool(BaseInterface):
                 await self.open()
             yield self._db
 
-        existing = self.existing_connection()
         transaction = self.in_transaction()
         commit = self.do_commit()
 

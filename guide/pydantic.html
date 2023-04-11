@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Working with Pydantic | 💧 Mayim</title>
+    <meta name="generator" content="VuePress 1.9.7">
+    
+    <meta name="description" content="Documentation for Mayim">
+    <meta name="theme-color" content="#5dadec">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    
+    <link rel="preload" href="/mayim/assets/css/0.styles.3308f443.css" as="style"><link rel="preload" href="/mayim/assets/js/app.55437e95.js" as="script"><link rel="preload" href="/mayim/assets/js/2.6ea905c0.js" as="script"><link rel="preload" href="/mayim/assets/js/7.143a9fe5.js" as="script"><link rel="preload" href="/mayim/assets/js/44.9ff53f52.js" as="script"><link rel="prefetch" href="/mayim/assets/js/10.eb63af45.js"><link rel="prefetch" href="/mayim/assets/js/11.e0b36719.js"><link rel="prefetch" href="/mayim/assets/js/12.df4d92e0.js"><link rel="prefetch" href="/mayim/assets/js/13.06d34adf.js"><link rel="prefetch" href="/mayim/assets/js/14.bc3a923d.js"><link rel="prefetch" href="/mayim/assets/js/15.0760b24c.js"><link rel="prefetch" href="/mayim/assets/js/16.7d4483e6.js"><link rel="prefetch" href="/mayim/assets/js/17.6bfa74e2.js"><link rel="prefetch" href="/mayim/assets/js/18.3e4481d5.js"><link rel="prefetch" href="/mayim/assets/js/19.d2c6c571.js"><link rel="prefetch" href="/mayim/assets/js/20.2333b8b7.js"><link rel="prefetch" href="/mayim/assets/js/21.8dd13b59.js"><link rel="prefetch" href="/mayim/assets/js/22.b7981469.js"><link rel="prefetch" href="/mayim/assets/js/23.b0d4b118.js"><link rel="prefetch" href="/mayim/assets/js/24.301c21fb.js"><link rel="prefetch" href="/mayim/assets/js/25.a51571d3.js"><link rel="prefetch" href="/mayim/assets/js/26.56e12627.js"><link rel="prefetch" href="/mayim/assets/js/27.812b6fc0.js"><link rel="prefetch" href="/mayim/assets/js/28.4c94a015.js"><link rel="prefetch" href="/mayim/assets/js/29.b85e31c3.js"><link rel="prefetch" href="/mayim/assets/js/3.9e3ae2d0.js"><link rel="prefetch" href="/mayim/assets/js/30.dbbe21f1.js"><link rel="prefetch" href="/mayim/assets/js/31.b20a5883.js"><link rel="prefetch" href="/mayim/assets/js/32.d0d44b83.js"><link rel="prefetch" href="/mayim/assets/js/33.aed9b532.js"><link rel="prefetch" href="/mayim/assets/js/34.9b7d7178.js"><link rel="prefetch" href="/mayim/assets/js/35.f7882c1a.js"><link rel="prefetch" href="/mayim/assets/js/36.a910d967.js"><link rel="prefetch" href="/mayim/assets/js/37.caf22407.js"><link rel="prefetch" href="/mayim/assets/js/38.1b72d911.js"><link rel="prefetch" href="/mayim/assets/js/39.cc35ef01.js"><link rel="prefetch" href="/mayim/assets/js/4.17cd9af5.js"><link rel="prefetch" href="/mayim/assets/js/40.cb746fdc.js"><link rel="prefetch" href="/mayim/assets/js/41.d3057ea7.js"><link rel="prefetch" href="/mayim/assets/js/42.0a61bf76.js"><link rel="prefetch" href="/mayim/assets/js/43.c780887d.js"><link rel="prefetch" href="/mayim/assets/js/45.ff3059f2.js"><link rel="prefetch" href="/mayim/assets/js/46.f58d09fa.js"><link rel="prefetch" href="/mayim/assets/js/47.16641353.js"><link rel="prefetch" href="/mayim/assets/js/5.0842bd90.js"><link rel="prefetch" href="/mayim/assets/js/6.c56f8c85.js"><link rel="prefetch" href="/mayim/assets/js/8.aac962e2.js"><link rel="prefetch" href="/mayim/assets/js/9.54f80839.js">
+    <link rel="stylesheet" href="/mayim/assets/css/0.styles.3308f443.css">
+  </head>
+  <body>
+    <div id="app" data-server-rendered="true"><div class="theme-container"><header class="navbar"><div class="sidebar-button"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" viewBox="0 0 448 512" class="icon"><path fill="currentColor" d="M436 124H12c-6.627 0-12-5.373-12-12V80c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12z"></path></svg></div> <a href="/mayim/" class="home-link router-link-active"><!----> <span class="site-name">💧 Mayim</span></a> <div class="links"><div class="search-box"><input aria-label="Search" autocomplete="off" spellcheck="false" value=""> <!----></div> <nav class="nav-links can-hide"><div class="nav-item"><div class="dropdown-wrapper"><button type="button" aria-label="Documentation" class="dropdown-title"><span class="title">Documentation</span> <span class="arrow down"></span></button> <button type="button" aria-label="Documentation" class="mobile-dropdown-title"><span class="title">Documentation</span> <span class="arrow right"></span></button> <ul class="nav-dropdown" style="display:none;"><li class="dropdown-item"><h4>
+          User Guide
+        </h4> <ul class="dropdown-subitem-wrapper"><li class="dropdown-subitem"><a href="/mayim/guide/install.html" class="nav-link">
+  Installation
+</a></li><li class="dropdown-subitem"><a href="/mayim/guide/basics.html" class="nav-link">
+  Basics
+</a></li><li class="dropdown-subitem"><a href="/mayim/guide/sqlfiles.html" class="nav-link">
+  Writing SQL files
+</a></li><li class="dropdown-subitem"><a href="/mayim/guide/simple.html" class="nav-link">
+  Full simple example
+</a></li><li class="dropdown-subitem"><a href="/mayim/guide/executors.html" class="nav-link">
+  Creating Executors
+</a></li><li class="dropdown-subitem"><a href="/mayim/guide/hydrators.html" class="nav-link">
+  Custom Hydrators
+</a></li><li class="dropdown-subitem"><a href="/mayim/guide/pydantic.html" aria-current="page" class="nav-link router-link-exact-active router-link-active">
+  Working with Pydantic
+</a></li><li class="dropdown-subitem"><a href="/mayim/guide/extensions.html" class="nav-link">
+  Framework extensions
+</a></li></ul></li><li class="dropdown-item"><h4>
+          API Docs
+        </h4> <ul class="dropdown-subitem-wrapper"><li class="dropdown-subitem"><a href="/mayim/api/index.html" class="nav-link">
+  Mayim Package
+</a></li></ul></li></ul></div></div><div class="nav-item"><a href="https://github.com/ahopkins/mayim/discussions" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  Support/Discussion
+  <span><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg> <span class="sr-only">(opens new window)</span></span></a></div> <a href="https://github.com/ahopkins/mayim" target="_blank" rel="noopener noreferrer" class="repo-link">
+    GitHub
+    <span><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg> <span class="sr-only">(opens new window)</span></span></a></nav> <!----></div></header> <div class="sidebar-mask"></div> <aside class="sidebar"><nav class="nav-links"><div class="nav-item"><div class="dropdown-wrapper"><button type="button" aria-label="Documentation" class="dropdown-title"><span class="title">Documentation</span> <span class="arrow down"></span></button> <button type="button" aria-label="Documentation" class="mobile-dropdown-title"><span class="title">Documentation</span> <span class="arrow right"></span></button> <ul class="nav-dropdown" style="display:none;"><li class="dropdown-item"><h4>
+          User Guide
+        </h4> <ul class="dropdown-subitem-wrapper"><li class="dropdown-subitem"><a href="/mayim/guide/install.html" class="nav-link">
+  Installation
+</a></li><li class="dropdown-subitem"><a href="/mayim/guide/basics.html" class="nav-link">
+  Basics
+</a></li><li class="dropdown-subitem"><a href="/mayim/guide/sqlfiles.html" class="nav-link">
+  Writing SQL files
+</a></li><li class="dropdown-subitem"><a href="/mayim/guide/simple.html" class="nav-link">
+  Full simple example
+</a></li><li class="dropdown-subitem"><a href="/mayim/guide/executors.html" class="nav-link">
+  Creating Executors
+</a></li><li class="dropdown-subitem"><a href="/mayim/guide/hydrators.html" class="nav-link">
+  Custom Hydrators
+</a></li><li class="dropdown-subitem"><a href="/mayim/guide/pydantic.html" aria-current="page" class="nav-link router-link-exact-active router-link-active">
+  Working with Pydantic
+</a></li><li class="dropdown-subitem"><a href="/mayim/guide/extensions.html" class="nav-link">
+  Framework extensions
+</a></li></ul></li><li class="dropdown-item"><h4>
+          API Docs
+        </h4> <ul class="dropdown-subitem-wrapper"><li class="dropdown-subitem"><a href="/mayim/api/index.html" class="nav-link">
+  Mayim Package
+</a></li></ul></li></ul></div></div><div class="nav-item"><a href="https://github.com/ahopkins/mayim/discussions" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  Support/Discussion
+  <span><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg> <span class="sr-only">(opens new window)</span></span></a></div> <a href="https://github.com/ahopkins/mayim" target="_blank" rel="noopener noreferrer" class="repo-link">
+    GitHub
+    <span><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg> <span class="sr-only">(opens new window)</span></span></a></nav>  <ul class="sidebar-links"><li><section class="sidebar-group depth-0"><p class="sidebar-heading open"><span>Guide</span> <!----></p> <ul class="sidebar-links sidebar-group-items"><li><a href="/mayim/guide/" aria-current="page" class="sidebar-link">Introduction</a></li><li><a href="/mayim/guide/install.html" class="sidebar-link">Installation</a></li><li><a href="/mayim/guide/basics.html" class="sidebar-link">Basics</a></li><li><a href="/mayim/guide/sqlfiles.html" class="sidebar-link">Writing SQL files</a></li><li><a href="/mayim/guide/simple.html" class="sidebar-link">A full simple example</a></li><li><a href="/mayim/guide/executors.html" class="sidebar-link">Creating Executors</a></li><li><a href="/mayim/guide/hydrators.html" class="sidebar-link">Custom Hydrators</a></li><li><a href="/mayim/guide/pydantic.html" aria-current="page" class="active sidebar-link">Working with Pydantic</a><ul class="sidebar-sub-headers"><li class="sidebar-sub-header"><a href="/mayim/guide/pydantic.html#it-just-works" class="sidebar-link">It just works 😎</a></li><li class="sidebar-sub-header"><a href="/mayim/guide/pydantic.html#nested-models" class="sidebar-link">Nested models</a></li></ul></li><li><a href="/mayim/guide/extensions.html" class="sidebar-link">Extensions</a></li></ul></section></li><li><section class="sidebar-group collapsable depth-0"><p class="sidebar-heading"><span>API Docs</span> <span class="arrow right"></span></p> <!----></section></li></ul> </aside> <main class="page"> <div class="theme-default-content content__default"><h1 id="working-with-pydantic"><a href="#working-with-pydantic" class="header-anchor">#</a> Working with Pydantic</h1> <h2 id="it-just-works"><a href="#it-just-works" class="header-anchor">#</a> It just works 😎</h2> <p>Out of the box, Mayim works great with <a href="https://pydantic-docs.helpmanual.io/" target="_blank" rel="noopener noreferrer">Pydantic<span><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg> <span class="sr-only">(opens new window)</span></span></a>.</p> <p>To get started, just annotate your executors with a Pydantic model.</p> <div class="language-python extra-class"><pre class="language-python"><code><span class="token keyword">import</span> asyncio
+<span class="token keyword">from</span> mayim <span class="token keyword">import</span> Mayim<span class="token punctuation">,</span> SQLiteExecutor<span class="token punctuation">,</span> query
+<span class="token keyword">from</span> pydantic <span class="token keyword">import</span> BaseModel
+
+
+<span class="token keyword">class</span> <span class="token class-name">Person</span><span class="token punctuation">(</span>BaseModel<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    name<span class="token punctuation">:</span> <span class="token builtin">str</span>
+
+
+<span class="token keyword">class</span> <span class="token class-name">PersonExecutor</span><span class="token punctuation">(</span>SQLiteExecutor<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token decorator annotation punctuation">@query</span><span class="token punctuation">(</span><span class="token string">&quot;SELECT $name as name&quot;</span><span class="token punctuation">)</span>
+    <span class="token keyword">async</span> <span class="token keyword">def</span> <span class="token function">select_person</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> name<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> Person<span class="token punctuation">:</span>
+        <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+
+
+<span class="token keyword">async</span> <span class="token keyword">def</span> <span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    executor <span class="token operator">=</span> PersonExecutor<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    Mayim<span class="token punctuation">(</span>db_path<span class="token operator">=</span><span class="token string">&quot;./example.db&quot;</span><span class="token punctuation">)</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token keyword">await</span> executor<span class="token punctuation">.</span>select_person<span class="token punctuation">(</span>name<span class="token operator">=</span><span class="token string">&quot;Adam&quot;</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+
+asyncio<span class="token punctuation">.</span>run<span class="token punctuation">(</span>run<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre></div><p><em>(This script is complete, it should run &quot;as is&quot;)</em></p> <h2 id="nested-models"><a href="#nested-models" class="header-anchor">#</a> Nested models</h2> <p>But, that is kind of boring and really misses one of the great features of Pydantic: it's ability to hydrate nested data. Going back to one of our earlier examples, what if we wanted to retrieve some data that looked like this:</p> <div class="language-python extra-class"><pre class="language-python"><code><span class="token keyword">class</span> <span class="token class-name">City</span><span class="token punctuation">(</span>BaseModel<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token builtin">id</span><span class="token punctuation">:</span> <span class="token builtin">int</span>
+    name<span class="token punctuation">:</span> <span class="token builtin">str</span>
+    district<span class="token punctuation">:</span> <span class="token builtin">str</span>
+    population<span class="token punctuation">:</span> <span class="token builtin">int</span>
+
+
+<span class="token keyword">class</span> <span class="token class-name">Country</span><span class="token punctuation">(</span>BaseModel<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    code<span class="token punctuation">:</span> <span class="token builtin">str</span>
+    name<span class="token punctuation">:</span> <span class="token builtin">str</span>
+    continent<span class="token punctuation">:</span> <span class="token builtin">str</span>
+    region<span class="token punctuation">:</span> <span class="token builtin">str</span>
+    capital<span class="token punctuation">:</span> City
+</code></pre></div><p>Our goal is to query for some countries, but we also want to capture the nested city information and have it available as <code>country.capital</code>, which is shown in the models.</p> <p>To do this, we can use SQL to generate rows that have nested JSON blobs as columns. When these queries are made, they will be output as nested <code>dict</code> objects that Pydantic will easily convert to our usable form.</p> <p>We start by making a <code>.sql</code> file with our desired query:</p> <div class="language-sql extra-class"><pre class="language-sql"><code><span class="token comment">-- ./queries/select_all_countries.sql</span>
+<span class="token keyword">SELECT</span> country<span class="token punctuation">.</span>code<span class="token punctuation">,</span>
+    country<span class="token punctuation">.</span>name<span class="token punctuation">,</span>
+    country<span class="token punctuation">.</span>continent<span class="token punctuation">,</span>
+    country<span class="token punctuation">.</span>region<span class="token punctuation">,</span>
+    <span class="token punctuation">(</span>
+        <span class="token keyword">SELECT</span> row_to_json<span class="token punctuation">(</span>q<span class="token punctuation">)</span>
+        <span class="token keyword">FROM</span> <span class="token punctuation">(</span>
+                <span class="token keyword">SELECT</span> city<span class="token punctuation">.</span>id<span class="token punctuation">,</span>
+                    city<span class="token punctuation">.</span>name<span class="token punctuation">,</span>
+                    city<span class="token punctuation">.</span>district<span class="token punctuation">,</span>
+                    city<span class="token punctuation">.</span>population
+            <span class="token punctuation">)</span> q
+    <span class="token punctuation">)</span> capital
+<span class="token keyword">FROM</span> country
+    <span class="token keyword">JOIN</span> city <span class="token keyword">ON</span> country<span class="token punctuation">.</span>capital <span class="token operator">=</span> city<span class="token punctuation">.</span>id
+<span class="token keyword">ORDER</span> <span class="token keyword">BY</span> country<span class="token punctuation">.</span>name <span class="token keyword">ASC</span>
+<span class="token keyword">LIMIT</span> $<span class="token keyword">limit</span> <span class="token keyword">OFFSET</span> $<span class="token keyword">offset</span><span class="token punctuation">;</span>
+</code></pre></div><p>Next, we make and run an executor like any other.</p> <div class="language-python extra-class"><pre class="language-python"><code><span class="token keyword">class</span> <span class="token class-name">CountryExecutor</span><span class="token punctuation">(</span>PostgresExecutor<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">async</span> <span class="token keyword">def</span> <span class="token function">select_all_countries</span><span class="token punctuation">(</span>
+        self<span class="token punctuation">,</span> limit<span class="token punctuation">:</span> <span class="token builtin">int</span> <span class="token operator">=</span> <span class="token number">4</span><span class="token punctuation">,</span> offset<span class="token punctuation">:</span> <span class="token builtin">int</span> <span class="token operator">=</span> <span class="token number">0</span>
+    <span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> List<span class="token punctuation">[</span>Country<span class="token punctuation">]</span><span class="token punctuation">:</span>
+        <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+
+
+<span class="token keyword">async</span> <span class="token keyword">def</span> <span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    country_executor <span class="token operator">=</span> CountryExecutor<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    Mayim<span class="token punctuation">(</span>dsn<span class="token operator">=</span><span class="token string">&quot;postgres://postgres:postgres@localhost:5432/world&quot;</span><span class="token punctuation">)</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span>
+        <span class="token keyword">await</span> country_executor<span class="token punctuation">.</span>select_all_countries<span class="token punctuation">(</span><span class="token number">50_000_000</span><span class="token punctuation">)</span>
+    <span class="token punctuation">)</span>
+</code></pre></div><p>As you would expect, we now have nice nested models:</p> <div class="language-python extra-class"><pre class="language-python"><code><span class="token punctuation">[</span>
+    Country<span class="token punctuation">(</span>
+        code<span class="token operator">=</span><span class="token string">&quot;AFG&quot;</span><span class="token punctuation">,</span>
+        name<span class="token operator">=</span><span class="token string">&quot;Afghanistan&quot;</span><span class="token punctuation">,</span>
+        continent<span class="token operator">=</span><span class="token string">&quot;Asia&quot;</span><span class="token punctuation">,</span>
+        region<span class="token operator">=</span><span class="token string">&quot;Southern and Central Asia&quot;</span><span class="token punctuation">,</span>
+        capital<span class="token operator">=</span>City<span class="token punctuation">(</span><span class="token builtin">id</span><span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span> name<span class="token operator">=</span><span class="token string">&quot;Kabul&quot;</span><span class="token punctuation">,</span> district<span class="token operator">=</span><span class="token string">&quot;Kabol&quot;</span><span class="token punctuation">,</span> population<span class="token operator">=</span><span class="token number">1780000</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span><span class="token punctuation">,</span>
+    Country<span class="token punctuation">(</span>
+        code<span class="token operator">=</span><span class="token string">&quot;ALB&quot;</span><span class="token punctuation">,</span>
+        name<span class="token operator">=</span><span class="token string">&quot;Albania&quot;</span><span class="token punctuation">,</span>
+        continent<span class="token operator">=</span><span class="token string">&quot;Europe&quot;</span><span class="token punctuation">,</span>
+        region<span class="token operator">=</span><span class="token string">&quot;Southern Europe&quot;</span><span class="token punctuation">,</span>
+        capital<span class="token operator">=</span>City<span class="token punctuation">(</span><span class="token builtin">id</span><span class="token operator">=</span><span class="token number">34</span><span class="token punctuation">,</span> name<span class="token operator">=</span><span class="token string">&quot;Tirana&quot;</span><span class="token punctuation">,</span> district<span class="token operator">=</span><span class="token string">&quot;Tirana&quot;</span><span class="token punctuation">,</span> population<span class="token operator">=</span><span class="token number">270000</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span><span class="token punctuation">,</span>
+    Country<span class="token punctuation">(</span>
+        code<span class="token operator">=</span><span class="token string">&quot;DZA&quot;</span><span class="token punctuation">,</span>
+        name<span class="token operator">=</span><span class="token string">&quot;Algeria&quot;</span><span class="token punctuation">,</span>
+        continent<span class="token operator">=</span><span class="token string">&quot;Africa&quot;</span><span class="token punctuation">,</span>
+        region<span class="token operator">=</span><span class="token string">&quot;Northern Africa&quot;</span><span class="token punctuation">,</span>
+        capital<span class="token operator">=</span>City<span class="token punctuation">(</span><span class="token builtin">id</span><span class="token operator">=</span><span class="token number">35</span><span class="token punctuation">,</span> name<span class="token operator">=</span><span class="token string">&quot;Alger&quot;</span><span class="token punctuation">,</span> district<span class="token operator">=</span><span class="token string">&quot;Alger&quot;</span><span class="token punctuation">,</span> population<span class="token operator">=</span><span class="token number">2168000</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span><span class="token punctuation">,</span>
+    Country<span class="token punctuation">(</span>
+        code<span class="token operator">=</span><span class="token string">&quot;ASM&quot;</span><span class="token punctuation">,</span>
+        name<span class="token operator">=</span><span class="token string">&quot;American Samoa&quot;</span><span class="token punctuation">,</span>
+        continent<span class="token operator">=</span><span class="token string">&quot;Oceania&quot;</span><span class="token punctuation">,</span>
+        region<span class="token operator">=</span><span class="token string">&quot;Polynesia&quot;</span><span class="token punctuation">,</span>
+        capital<span class="token operator">=</span>City<span class="token punctuation">(</span><span class="token builtin">id</span><span class="token operator">=</span><span class="token number">54</span><span class="token punctuation">,</span> name<span class="token operator">=</span><span class="token string">&quot;Fagatogo&quot;</span><span class="token punctuation">,</span> district<span class="token operator">=</span><span class="token string">&quot;Tutuila&quot;</span><span class="token punctuation">,</span> population<span class="token operator">=</span><span class="token number">2323</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span><span class="token punctuation">,</span>
+<span class="token punctuation">]</span>
+</code></pre></div></div> <footer class="page-edit"><div class="edit-link"><a href="https://github.com/ahopkins/mayim/edit/main/docs/src/guide/pydantic.md" target="_blank" rel="noopener noreferrer">Edit this page</a> <span><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg> <span class="sr-only">(opens new window)</span></span></div> <!----></footer> <div class="page-nav"><p class="inner"><span class="prev">
+      ←
+      <a href="/mayim/guide/hydrators.html" class="prev">
+        Custom Hydrators
+      </a></span> <span class="next"><a href="/mayim/guide/extensions.html">
+        Extensions
+      </a>
+      →
+    </span></p></div> </main></div><div class="global-ui"></div></div>
+    <script src="/mayim/assets/js/app.55437e95.js" defer></script><script src="/mayim/assets/js/2.6ea905c0.js" defer></script><script src="/mayim/assets/js/7.143a9fe5.js" defer></script><script src="/mayim/assets/js/44.9ff53f52.js" defer></script>
+  </body>
+</html>

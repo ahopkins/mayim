@@ -2,7 +2,7 @@
 
 Have you ever tried writing SQL statements in Python code? Its not a pleasant experience. :anguished: Wouldn't it just be nicer if you could write `*.sql` files? Then those files could have all the nice features your IDE wants to offer with syntax highlighting, code execution, auto-suggestions, etc.
 
-Of course you do not need to define all of your queries in `.sql` files to use Mayime. But to be honest, it is one of the really powerful features of Mayim so take advantage of it!
+Of course you do not need to define all of your queries in `.sql` files to use Mayim. But to be honest, it is one of the really powerful features of Mayim so take advantage of it!
 
 ## Where to save your `.sql` files?
 

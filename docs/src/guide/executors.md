@@ -66,7 +66,7 @@ async def run():
 
 ### Implied registration
 
-On the frontpage example, we instantiated our executor before calling `Mayim`, and **never** explicitly loaded the class (or instance). This implie registration is fine *only if it is instantiated before the `Mayim` object*. Because of this "gotcha", this option is not the recommended approach.
+On the frontpage example, we instantiated our executor before calling `Mayim`, and **never** explicitly loaded the class (or instance). This implies registration is fine *only if it is instantiated before the `Mayim` object*. Because of this "gotcha", this option is not the recommended approach.
 
 
 ### Global registration with `@register`
@@ -106,7 +106,7 @@ from some.location.my.app import MyExecutor
 executor = Mayim.get(MyExecutor)
 ```
 
-This is a very helpful pattern to allow you to access `Executor` instances in just about any part of your appication that you need to.
+This is a very helpful pattern to allow you to access `Executor` instances in just about any part of your application that you need to.
 
 ::: warning
 Be careful about import ordering here. Although the example above places `executor` in the global scope, that is not well advised. You are much better off placing it inside of some function that will be called by your application to avoid import and run time errors. For example, inside of a web handler endpoint.
@@ -182,7 +182,7 @@ class CityExecutor(PostgresExecutor):
 
 ## Low level `run_sql`
 
-What if you need are not sure at run time what model to return? What if you need to dynamically determine what should be hydrated? Mayim also provides a lower-level API for running the SQL, and then hydrating it with a given model.
+What if you are not sure at run time what model to return? What if you need to dynamically determine what should be hydrated? Mayim also provides a lower-level API for running the SQL, and then hydrating it with a given model.
 
 ```python
 class CityExecutor(PostgresExecutor):

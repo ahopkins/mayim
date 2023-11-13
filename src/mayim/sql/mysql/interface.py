@@ -63,6 +63,7 @@ class MysqlPool(BaseInterface):
             yield existing
         else:
             transaction = self.in_transaction()
+            await self.open()
             async with self._pool.acquire() as conn:
                 if transaction:
                     await conn.begin()

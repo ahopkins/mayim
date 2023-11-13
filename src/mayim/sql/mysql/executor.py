@@ -35,6 +35,7 @@ class MysqlExecutor(SQLExecutor):
                 exec_values = list(posargs) if posargs else params
                 await cursor.execute(query, exec_values)
                 if no_result:
+                    await conn.commit()
                     return None
                 raw = await getattr(cursor, method_name)()
                 return raw

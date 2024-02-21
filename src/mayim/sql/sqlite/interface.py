@@ -55,20 +55,21 @@ class SQLitePool(BaseInterface):
         existing = self.existing_connection()
         close_when_done = False
 
-        if existing:
-            yield existing
-        else:
-            if not self._db:
-                close_when_done = True
-                await self.open()
-            yield self._db
+        try:
+            if existing:
+                yield existing
+            else:
+                if not self._db:
+                    close_when_done = True
+                    await self.open()
+                yield self._db
 
-        transaction = self.in_transaction()
-        commit = self.do_commit()
+            transaction = self.in_transaction()
+            commit = self.do_commit()
 
-        if not transaction:
-            if commit:
-                await self._db.commit()  # type: ignore
-
-        if close_when_done:
-            await self.close()
+            if not transaction:
+                if commit:
+                    await self._db.commit()  # type: ignore
+        finally:
+            if close_when_done:
+                await self.close()

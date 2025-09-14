@@ -114,20 +114,22 @@ class PoolRegistry:
         return cls._singleton
 
     @classmethod
-    def get_or_create(cls, dsn: str, pool_class: Type[BaseInterface]) -> BaseInterface:
+    def get_or_create(cls, dsn: str, pool_class: Type[BaseInterface], min_size: int = 1, max_size: Optional[int] = None) -> BaseInterface:
         """
         Get existing pool or create new one for DSN.
         
         Args:
             dsn: Database connection string
             pool_class: Class to use for creating new pool
+            min_size: Minimum number of connections in pool
+            max_size: Maximum number of connections in pool
             
         Returns:
             Shared pool instance for the DSN
         """
         instance = cls()
         if dsn not in instance._pools:
-            instance._pools[dsn] = pool_class(dsn)
+            instance._pools[dsn] = pool_class(dsn, min_size=min_size, max_size=max_size)
         return instance._pools[dsn]
     
     @classmethod

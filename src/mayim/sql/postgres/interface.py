@@ -35,7 +35,11 @@ class PostgresPool(BaseInterface):
                 "Postgres driver not found. Try reinstalling Mayim: "
                 "pip install mayim[postgres]"
             )
-        self._pool = AsyncConnectionPool(self.full_dsn)
+        self._pool = AsyncConnectionPool(
+            self.full_dsn, 
+            min_size=self.min_size,
+            max_size=self.max_size
+        )
 
     async def open(self):
         """Open connections to the pool"""

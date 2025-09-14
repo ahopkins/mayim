@@ -13,6 +13,8 @@ class LazyPool(BaseInterface):
             cls._singleton = super().__new__(cls)
             cls._singleton._derivative = None
             cls._singleton._derivative_dsn = ""
+            cls._singleton._min_size = 1
+            cls._singleton._max_size = None
         return cls._singleton
 
     def _setup_pool(self):
@@ -39,7 +41,11 @@ class LazyPool(BaseInterface):
     def set_dsn(self, dsn: str) -> None:
         self._derivative_dsn = dsn
 
+    def set_sizing(self, min_size: int = 1, max_size: Optional[int] = None) -> None:
+        self._min_size = min_size
+        self._max_size = max_size
+
     def derive(self) -> BaseInterface:
         if not self._derivative:
             raise MayimError("No interface available to derive")
-        return self._derivative(dsn=self._derivative_dsn)
+        return self._derivative(dsn=self._derivative_dsn, min_size=self._min_size, max_size=self._max_size)

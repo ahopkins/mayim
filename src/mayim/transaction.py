@@ -4,10 +4,12 @@ Provides global transaction management across multiple executors.
 """
 from __future__ import annotations
 
+import asyncio
 from contextlib import AsyncExitStack, asynccontextmanager
 from contextvars import ContextVar
 from enum import Enum
 from inspect import isclass
+from time import time
 from typing import Any, Dict, List, Optional, Set, Type, Union
 
 from mayim.base.interface import BaseInterface
@@ -147,13 +149,14 @@ class TransactionCoordinator:
     Supports both context manager and explicit transaction control.
     """
     
-    def __init__(self, executors: List[Union[Type, Any]], use_2pc: bool = False):
+    def __init__(self, executors: List[Union[Type, Any]], use_2pc: bool = False, timeout: Optional[float] = None):
         """
         Initialize transaction coordinator.
         
         Args:
             executors: List of executor classes or instances to include in transaction
             use_2pc: Whether to use two-phase commit protocol if available
+            timeout: Maximum duration in seconds before transaction is automatically rolled back
         """
         self._executors = executors
         self._context: Optional[GlobalTransactionContext] = None
@@ -162,6 +165,9 @@ class TransactionCoordinator:
         self._stack: Optional[AsyncExitStack] = None
         self._use_2pc = use_2pc
         self._prepared = False
+        self._timeout = timeout
+        self._start_time: Optional[float] = None
+        self._timeout_task: Optional[asyncio.Task] = None
         
     @property
     def is_active(self) -> bool:
@@ -209,6 +215,11 @@ class TransactionCoordinator:
             self._state = TransactionState.ACTIVE
             self._context.state = TransactionState.ACTIVE
             
+            # Start timeout tracking
+            self._start_time = time()
+            if self._timeout is not None:
+                self._timeout_task = asyncio.create_task(self._timeout_monitor())
+            
         except Exception:
             # Clean up on failure
             await self._cleanup()
@@ -236,6 +247,13 @@ class TransactionCoordinator:
         """
         if self._state == TransactionState.PENDING:
             raise MayimError("Transaction not active")
+        
+        # Check for timeout first
+        if self._check_timeout() or self._state == TransactionState.ROLLED_BACK:
+            if self._state != TransactionState.ROLLED_BACK:
+                await self.rollback()
+            raise MayimError("Transaction timed out")
+        
         if self._state in (TransactionState.COMMITTED, TransactionState.ROLLED_BACK):
             raise MayimError("Transaction already completed")
         if self._state != TransactionState.ACTIVE:
@@ -276,8 +294,37 @@ class TransactionCoordinator:
             # Clean up
             await self._cleanup()
     
+    async def _timeout_monitor(self):
+        """Monitor transaction timeout and auto-rollback if exceeded"""
+        try:
+            await asyncio.sleep(self._timeout)
+            # Timeout exceeded, force rollback
+            if self._state == TransactionState.ACTIVE:
+                self._state = TransactionState.ROLLED_BACK
+                if self._context:
+                    self._context.state = TransactionState.ROLLED_BACK
+        except asyncio.CancelledError:
+            # Normal case - transaction completed before timeout
+            pass
+    
+    def _check_timeout(self):
+        """Check if transaction has timed out"""
+        if self._timeout is not None and self._start_time is not None:
+            elapsed = time() - self._start_time
+            if elapsed > self._timeout:
+                return True
+        return False
+    
     async def _cleanup(self):
         """Clean up transaction resources"""
+        # Cancel timeout task
+        if self._timeout_task and not self._timeout_task.done():
+            self._timeout_task.cancel()
+            try:
+                await self._timeout_task
+            except asyncio.CancelledError:
+                pass
+        
         if self._context:
             await self._context.cleanup()
         
@@ -285,7 +332,11 @@ class TransactionCoordinator:
             await self._stack.__aexit__(None, None, None)
         
         if self._token:
-            _global_transaction.reset(self._token)
+            try:
+                _global_transaction.reset(self._token)
+            except ValueError:
+                # Token was reset in different context (e.g., timeout task)
+                pass
             self._token = None
     
     async def __aenter__(self):

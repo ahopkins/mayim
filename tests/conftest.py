@@ -11,6 +11,7 @@ from mayim.registry import (
     LazyHydratorRegistry,
     LazyQueryRegistry,
     Registry,
+    PoolRegistry,
 )
 from mayim.sql.postgres import interface
 
@@ -40,6 +41,7 @@ def reset_registry():
     InterfaceRegistry().reset()
     LazyQueryRegistry().reset()
     LazyHydratorRegistry().reset()
+    PoolRegistry().reset()
 
 
 @pytest.fixture

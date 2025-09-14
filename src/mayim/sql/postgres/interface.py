@@ -20,6 +20,15 @@ class PostgresPool(BaseInterface):
 
     scheme = "postgres"
 
+    def _populate_dsn(self):
+        if not self._query:
+            self._query = ""
+        if "application_name" not in self._query:
+            if self._query:
+                self._query += "&"
+            self._query += "application_name=mayim"
+        super()._populate_dsn()
+
     def _setup_pool(self):
         if not POSTGRES_ENABLED:
             raise MayimError(

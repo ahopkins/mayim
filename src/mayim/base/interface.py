@@ -117,10 +117,22 @@ class BaseInterface(ABC):
         dsn = self.dsn or ""
         if dsn:
             parts = urlparse(dsn)
+            # Default values for common database ports
+            defaults = {
+                "port": 5432 if "postgres" in dsn else 3306 if "mysql" in dsn else None,
+                "hostname": "localhost",
+                "username": None,
+                "password": None,
+                "path": "/",
+                "query": ""
+            }
             for key, mapping in URLPARSE_MAPPING.items():
                 if not getattr(self, mapping.key):
-                    value = getattr(parts, key, None)  # or TODO: make defaults
-                    setattr(self, mapping.key, mapping.cast(value))
+                    value = getattr(parts, key, None)
+                    if value is None:
+                        value = defaults.get(key)
+                    if value is not None:
+                        setattr(self, mapping.key, mapping.cast(value))
 
     def _populate_dsn(self):
         self._dsn = (

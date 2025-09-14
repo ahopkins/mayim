@@ -98,3 +98,46 @@ class LazyHydratorRegistry:
     def reset(cls):
         cls._singleton = super().__new__(cls)
         cls._singleton._hydrators = defaultdict(dict)
+
+
+class PoolRegistry:
+    """
+    Registry to ensure executors with the same DSN share the same pool instance.
+    This prevents duplicate connections and enables proper transaction coordination.
+    """
+    _singleton = None
+    _pools: Dict[str, BaseInterface]
+
+    def __new__(cls, *args, **kwargs):
+        if cls._singleton is None:
+            cls.reset()
+        return cls._singleton
+
+    @classmethod
+    def get_or_create(cls, dsn: str, pool_class: Type[BaseInterface]) -> BaseInterface:
+        """
+        Get existing pool or create new one for DSN.
+        
+        Args:
+            dsn: Database connection string
+            pool_class: Class to use for creating new pool
+            
+        Returns:
+            Shared pool instance for the DSN
+        """
+        instance = cls()
+        if dsn not in instance._pools:
+            instance._pools[dsn] = pool_class(dsn)
+        return instance._pools[dsn]
+    
+    @classmethod
+    def get(cls, dsn: str) -> Optional[BaseInterface]:
+        """Get pool for DSN if it exists"""
+        instance = cls()
+        return instance._pools.get(dsn)
+    
+    @classmethod
+    def reset(cls):
+        """Reset the registry (useful for testing)"""
+        cls._singleton = super().__new__(cls)
+        cls._singleton._pools = {}

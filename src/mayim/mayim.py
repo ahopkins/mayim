@@ -8,9 +8,10 @@ from mayim.base import Executor, Hydrator
 from mayim.base.interface import BaseInterface
 from mayim.exception import MayimError
 from mayim.lazy.interface import LazyPool
-from mayim.registry import InterfaceRegistry, Registry
+from mayim.registry import InterfaceRegistry, Registry, PoolRegistry
 from mayim.sql.executor import SQLExecutor
 from mayim.sql.postgres.interface import PostgresPool
+from mayim.transaction import TransactionCoordinator
 
 T = TypeVar("T", bound=Executor)
 DEFAULT_INTERFACE = PostgresPool
@@ -96,7 +97,8 @@ class Mayim:
                 pool.set_derivative(pool_type)
                 pool.set_dsn(dsn)
             else:
-                pool = pool_type(dsn)
+                # Use PoolRegistry to ensure same DSN uses same pool
+                pool = PoolRegistry.get_or_create(dsn, pool_type)
 
         if not executors:
             executors = []
@@ -241,30 +243,88 @@ class Mayim:
             await interface.close()
 
     @classmethod
-    @asynccontextmanager
-    async def transaction(
-        cls, *executors: Union[SQLExecutor, Type[SQLExecutor]]
+    def transaction(
+        cls, *executors: Union[SQLExecutor, Type[SQLExecutor]], use_2pc: bool = False
     ):
-        if not executors:
+        """
+        Create a transaction across multiple executors.
+        
+        Can be used as either:
+        1. Old style context manager: async with Mayim.transaction(exec1, exec2):
+        2. New style: txn = await Mayim.transaction(exec1, exec2); await txn.begin()
+        3. New style context: async with await Mayim.transaction(exec1, exec2) as txn:
+        
+        Args:
+            executors: Executor classes or instances to include in transaction.
+                      If not provided, includes all registered SQL executors.
+            use_2pc: Whether to use two-phase commit protocol if available.
+        
+        Returns:
+            _TransactionWrapper that provides backward compatibility
+        """
+        return _TransactionWrapper(cls, executors, use_2pc)
+
+
+class _TransactionWrapper:
+    """
+    Wrapper to provide backward compatibility for Mayim.transaction().
+    Can be used both as an awaitable (new style) and as async context manager (old style).
+    """
+    
+    def __init__(self, mayim_cls, executors, use_2pc=False):
+        self._mayim_cls = mayim_cls
+        self._executors = executors
+        self._coordinator = None
+        self._use_2pc = use_2pc
+    
+    def __await__(self):
+        """Support: txn = await Mayim.transaction(...)"""
+        async def _create():
+            return await self._create_coordinator()
+        return _create().__await__()
+    
+    async def _create_coordinator(self) -> TransactionCoordinator:
+        """Create the actual TransactionCoordinator"""
+        if not self._executors:
+            # Default to all registered SQL executors
             executors = tuple(
-                (
-                    executor
-                    for executor in Registry().values()
-                    if (
-                        isclass(executor) and issubclass(executor, SQLExecutor)
-                    )
-                    or (
-                        not isclass(executor)
-                        and isinstance(executor, SQLExecutor)
-                    )
-                )
+                executor
+                for executor in Registry().values()
+                if (isclass(executor) and issubclass(executor, SQLExecutor))
+                or (not isclass(executor) and isinstance(executor, SQLExecutor))
             )
-        async with AsyncExitStack() as stack:
-            for maybe_executor in executors:
-                executor = (
-                    cls.get(maybe_executor)
-                    if isclass(maybe_executor)
-                    else maybe_executor
+        else:
+            executors = self._executors
+        
+        # Convert classes to instances
+        resolved_executors = []
+        for maybe_executor in executors:
+            if isclass(maybe_executor):
+                try:
+                    executor = self._mayim_cls.get(maybe_executor)
+                except MayimError:
+                    raise MayimError(f"Executor {maybe_executor} not registered")
+            else:
+                executor = maybe_executor
+            
+            # Validate it's a SQL executor
+            if not isinstance(executor, SQLExecutor):
+                raise MayimError(
+                    f"All executors must be SQL executors, got {type(executor)}"
                 )
-                await stack.enter_async_context(executor.transaction())
-            yield
+            
+            resolved_executors.append(executor)
+        
+        # Return the transaction coordinator
+        return TransactionCoordinator(resolved_executors, use_2pc=self._use_2pc)
+    
+    async def __aenter__(self):
+        """Support old style: async with Mayim.transaction(...)"""
+        self._coordinator = await self._create_coordinator()
+        await self._coordinator.begin()
+        return self._coordinator
+    
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Handle old style context manager exit"""
+        if self._coordinator:
+            return await self._coordinator.__aexit__(exc_type, exc_val, exc_tb)

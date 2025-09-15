@@ -24,8 +24,9 @@ async def test_auto_load_keyword(postgres_connection):
     postgres_connection.result = {"item_id": 99, "name": "thing"}
 
     class ItemExecutor(PostgresExecutor):
-        async def select_items(self, limit: int = 4, offset: int = 0) -> Item:
-            ...
+        async def select_items(
+            self, limit: int = 4, offset: int = 0
+        ) -> Item: ...
 
     Mayim(executors=[ItemExecutor], dsn="foo://user:password@host:1234/db")
     executor = Mayim.get(ItemExecutor)
@@ -51,8 +52,9 @@ async def test_sql_decorator_keyword(postgres_connection):
             LIMIT $limit OFFSET $offset;
             """
         )
-        async def select_items(self, limit: int = 4, offset: int = 0) -> Item:
-            ...
+        async def select_items(
+            self, limit: int = 4, offset: int = 0
+        ) -> Item: ...
 
     Mayim(executors=[ItemExecutor], dsn="foo://user:password@host:1234/db")
     executor = Mayim.get(ItemExecutor)
@@ -75,8 +77,7 @@ async def test_auto_load_positional(postgres_connection):
     class ItemExecutor(PostgresExecutor):
         async def select_items_numbered(
             self, limit: int = 4, offset: int = 0
-        ) -> Item:
-            ...
+        ) -> Item: ...
 
     Mayim(executors=[ItemExecutor], dsn="foo://user:password@host:1234/db")
     executor = Mayim.get(ItemExecutor)
@@ -107,8 +108,7 @@ async def test_sql_decorator_positional(postgres_connection):
         )
         async def select_items_numbered(
             self, limit: int = 4, offset: int = 0
-        ) -> Item:
-            ...
+        ) -> Item: ...
 
     Mayim(executors=[ItemExecutor], dsn="foo://user:password@host:1234/db")
     executor = Mayim.get(ItemExecutor)

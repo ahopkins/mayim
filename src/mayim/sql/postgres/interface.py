@@ -20,13 +20,27 @@ class PostgresPool(BaseInterface):
 
     scheme = "postgres"
 
+    def _populate_dsn(self):
+        if not self._query:
+            self._query = ""
+        if "application_name" not in self._query:
+            if self._query:
+                self._query += "&"
+            self._query += "application_name=mayim"
+        super()._populate_dsn()
+
     def _setup_pool(self):
         if not POSTGRES_ENABLED:
             raise MayimError(
                 "Postgres driver not found. Try reinstalling Mayim: "
                 "pip install mayim[postgres]"
             )
-        self._pool = AsyncConnectionPool(self.full_dsn)
+        self._pool = AsyncConnectionPool(
+            self.full_dsn,
+            min_size=self.min_size,
+            max_size=self.max_size,
+            open=False,
+        )
 
     async def open(self):
         """Open connections to the pool"""

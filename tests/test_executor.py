@@ -196,8 +196,7 @@ async def test_empty_result_none_union(postgres_connection):
 
     class ItemExecutor(PostgresExecutor):
         @query("SELECT * FROM otheritems")
-        async def select_otheritems(self) -> int | None:
-            ...
+        async def select_otheritems(self) -> int | None: ...
 
     Mayim(executors=[ItemExecutor], dsn="foo://user:password@host:1234/db")
     executor = Mayim.get(ItemExecutor)
@@ -208,8 +207,7 @@ async def test_empty_result_none_union(postgres_connection):
 
 def test_missing_sql_not_strict():
     class FooExecutor(PostgresExecutor):
-        async def select_missing(self) -> int:
-            ...
+        async def select_missing(self) -> int: ...
 
     Mayim(
         executors=[FooExecutor()],
@@ -220,8 +218,7 @@ def test_missing_sql_not_strict():
 
 def test_missing_sql_strict():
     class FooExecutor(PostgresExecutor):
-        async def select_missing(self) -> int:
-            ...
+        async def select_missing(self) -> int: ...
 
     message = re.escape(
         "Could not find SQL for FooExecutor.select_missing. "

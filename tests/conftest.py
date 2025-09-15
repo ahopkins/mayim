@@ -10,6 +10,7 @@ from mayim.registry import (
     InterfaceRegistry,
     LazyHydratorRegistry,
     LazyQueryRegistry,
+    PoolRegistry,
     Registry,
 )
 from mayim.sql.postgres import interface
@@ -40,6 +41,7 @@ def reset_registry():
     InterfaceRegistry().reset()
     LazyQueryRegistry().reset()
     LazyHydratorRegistry().reset()
+    PoolRegistry().reset()
 
 
 @pytest.fixture
@@ -70,8 +72,7 @@ def mock_postgres_pool(monkeypatch, postgres_connection_context):
 @pytest.fixture
 def FooExecutor():
     class FooExecutor(Executor):
-        async def select_something(self) -> Foo:
-            ...
+        async def select_something(self) -> Foo: ...
 
         @classmethod
         def _load(cls, _):
@@ -99,8 +100,7 @@ def ItemExecutor(Item):
 
     class ItemExecutor(PostgresExecutor):
         @query(single_query)
-        async def select_otheritem(self, item_id: int) -> Item:
-            ...
+        async def select_otheritem(self, item_id: int) -> Item: ...
 
         async def select_otheritem_execute(self, item_id: int) -> Item:
             return await self.execute(
@@ -122,8 +122,7 @@ def ItemExecutor(Item):
             )
 
         @query(single_query)
-        async def select_int(self, item_id: int) -> int:
-            ...
+        async def select_int(self, item_id: int) -> int: ...
 
         async def select_int_execute(self, item_id: int) -> int:
             return await self.execute(
@@ -131,15 +130,15 @@ def ItemExecutor(Item):
             )
 
         @query(multiple_query)
-        async def select_otheritems(self) -> List[Item]:
-            ...
+        async def select_otheritems(self) -> List[Item]: ...
 
         async def select_otheritems_execute(self) -> List[Item]:
             return await self.execute(query=multiple_query, as_list=True)
 
         @query(single_query)
-        async def select_optional_item(self, item_id: int) -> Optional[Item]:
-            ...
+        async def select_optional_item(
+            self, item_id: int
+        ) -> Optional[Item]: ...
 
         async def select_optional_item_execute(
             self, item_id: int
@@ -151,8 +150,7 @@ def ItemExecutor(Item):
             )
 
         @query(multiple_query)
-        async def select_optional_items(self) -> Optional[List[Item]]:
-            ...
+        async def select_optional_items(self) -> Optional[List[Item]]: ...
 
         async def select_optional_items_execute(self) -> Optional[List[Item]]:
             return await self.execute(
@@ -160,12 +158,10 @@ def ItemExecutor(Item):
             )
 
         @query(update_query)
-        async def update_item_empty(self, item_id: int, name: str):
-            ...
+        async def update_item_empty(self, item_id: int, name: str): ...
 
         @query(update_query)
-        async def update_item_none(self, item_id: int, name: str) -> None:
-            ...
+        async def update_item_none(self, item_id: int, name: str) -> None: ...
 
         async def update_item_empty_execute(self, item_id: int, name: str):
             await self.execute(
@@ -180,8 +176,7 @@ def ItemExecutor(Item):
             )
 
         @query(single_query_positional)
-        async def select_otheritem_positional(self, item_id: int) -> Item:
-            ...
+        async def select_otheritem_positional(self, item_id: int) -> Item: ...
 
         async def select_otheritem_positional_execute(
             self, item_id: int

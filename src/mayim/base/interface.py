@@ -30,20 +30,16 @@ class BaseInterface(ABC):
         BaseInterface.registered_interfaces.add(cls)
 
     @abstractmethod
-    def _setup_pool(self):
-        ...
+    def _setup_pool(self): ...
 
     @abstractmethod
-    async def open(self):
-        ...
+    async def open(self): ...
 
     @abstractmethod
-    async def close(self):
-        ...
+    async def close(self): ...
 
     @abstractmethod
-    def connection(self, timeout: Optional[float] = None):
-        ...
+    def connection(self, timeout: Optional[float] = None): ...
 
     def __init__(
         self,
@@ -54,6 +50,8 @@ class BaseInterface(ABC):
         password: Optional[str] = None,
         db: Optional[int] = None,
         query: Optional[str] = None,
+        min_size: int = 1,
+        max_size: Optional[int] = None,
     ) -> None:
         """DB class initialization.
 
@@ -64,6 +62,8 @@ class BaseInterface(ABC):
             password (str, optional): DB password
             db (int, optional): DB db. Defaults to 1
             query (str, optional): DB query parameters. Defaults to None
+            min_size (int, optional): Minimum number of connections in pool. Defaults to 1
+            max_size (int, optional): Maximum number of connections in pool. Defaults to None
         """
 
         if dsn and host:
@@ -96,6 +96,8 @@ class BaseInterface(ABC):
         self._password = password
         self._db = db
         self._query = query
+        self._min_size = min_size
+        self._max_size = max_size
         self._full_dsn: Optional[str] = None
         self._connection: ContextVar[Any] = ContextVar(
             "connection", default=None
@@ -117,10 +119,26 @@ class BaseInterface(ABC):
         dsn = self.dsn or ""
         if dsn:
             parts = urlparse(dsn)
+            # Default values for common database ports
+            defaults = {
+                "port": (
+                    5432
+                    if "postgres" in dsn
+                    else 3306 if "mysql" in dsn else None
+                ),
+                "hostname": "localhost",
+                "username": None,
+                "password": None,
+                "path": "/",
+                "query": "",
+            }
             for key, mapping in URLPARSE_MAPPING.items():
                 if not getattr(self, mapping.key):
-                    value = getattr(parts, key, None)  # or TODO: make defaults
-                    setattr(self, mapping.key, mapping.cast(value))
+                    value = getattr(parts, key, None)
+                    if value is None:
+                        value = defaults.get(key)
+                    if value is not None:
+                        setattr(self, mapping.key, mapping.cast(value))
 
     def _populate_dsn(self):
         self._dsn = (
@@ -171,6 +189,14 @@ class BaseInterface(ABC):
     @property
     def full_dsn(self):
         return self._full_dsn
+
+    @property
+    def min_size(self):
+        return self._min_size
+
+    @property
+    def max_size(self):
+        return self._max_size
 
     def existing_connection(self):
         return self._connection.get()

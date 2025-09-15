@@ -1,5 +1,4 @@
 from asyncio import get_running_loop
-from contextlib import AsyncExitStack, asynccontextmanager
 from inspect import isclass
 from typing import Optional, Sequence, Type, TypeVar, Union
 from urllib.parse import urlparse
@@ -44,7 +43,7 @@ class Mayim:
         pool: Optional[BaseInterface] = None,
         strict: bool = True,
         min_size: int = 1,
-        max_size: int | None = None,
+        max_size: Optional[int] = None,
     ):
         """Initializer for Mayim instance
 
@@ -101,9 +100,7 @@ class Mayim:
                 pool.set_sizing(min_size, max_size)
             else:
                 # Use PoolRegistry to ensure same DSN uses same pool
-                pool = PoolRegistry.get_or_create(
-                    dsn, pool_type, min_size, max_size
-                )
+                pool = PoolRegistry.get_or_create(dsn, pool_type, min_size, max_size)
 
         if not executors:
             executors = []
@@ -204,9 +201,7 @@ class Mayim:
             if isinstance(executor, Executor):
                 if executor.pool is LazyPool():
                     if not pool:
-                        raise MayimError(
-                            f"Cannot load {executor} without a pool"
-                        )
+                        raise MayimError(f"Cannot load {executor} without a pool")
                     executor._pool = pool
                 executor = executor.__class__
             else:
@@ -303,9 +298,7 @@ class _TransactionWrapper:
                 executor
                 for executor in Registry().values()
                 if (isclass(executor) and issubclass(executor, SQLExecutor))
-                or (
-                    not isclass(executor) and isinstance(executor, SQLExecutor)
-                )
+                or (not isclass(executor) and isinstance(executor, SQLExecutor))
             )
         else:
             executors = self._executors
@@ -325,9 +318,7 @@ class _TransactionWrapper:
                 try:
                     executor = self._mayim_cls.get(maybe_executor)
                 except MayimError:
-                    raise MayimError(
-                        f"Executor {maybe_executor} not registered"
-                    )
+                    raise MayimError(f"Executor {maybe_executor} not registered")
             else:
                 executor = maybe_executor
                 # Validate it's a SQL executor instance
@@ -337,9 +328,7 @@ class _TransactionWrapper:
                     )
                 # For instances, check if they're registered by checking if we can get the class
                 try:
-                    registered_instance = self._mayim_cls.get(
-                        executor.__class__
-                    )
+                    registered_instance = self._mayim_cls.get(executor.__class__)
                     # If the registered instance is different, the passed instance is not registered
                     if registered_instance is not executor:
                         raise MayimError(f"Executor {executor} not registered")

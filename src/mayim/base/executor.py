@@ -209,8 +209,7 @@ class Executor(Generic[T]):
         return self._hydrators.get(name, self.hydrator)
 
     @classmethod
-    def _load(cls, strict: bool) -> None:
-        ...
+    def _load(cls, strict: bool) -> None: ...
 
     @staticmethod
     def is_query_name(obj) -> bool:

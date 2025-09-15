@@ -21,8 +21,7 @@ except ModuleNotFoundError:
     Starlette = type("Starlette", (), {})  # type: ignore
 
 
-class Default:
-    ...
+class Default: ...
 
 
 _default = Default()

@@ -2,12 +2,10 @@ from mayim import Mayim, PostgresExecutor, hydrator
 from mayim.base.hydrator import Hydrator
 
 
-class HydratorA(Hydrator):
-    ...
+class HydratorA(Hydrator): ...
 
 
-class HydratorB(Hydrator):
-    ...
+class HydratorB(Hydrator): ...
 
 
 async def test_get_hydrator_by_name():

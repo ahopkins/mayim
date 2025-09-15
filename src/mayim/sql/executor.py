@@ -153,13 +153,12 @@ class SQLExecutor(Executor[SQLQuery]):
         no_result: bool = False,
         posargs: Optional[Sequence[Any]] = None,
         params: Optional[Dict[str, Any]] = None,
-    ):
-        ...
+    ): ...
 
     async def rollback(self, *, silent: bool = False) -> None:
         # Check if we're part of a global transaction
         from mayim.transaction import get_global_transaction
-        
+
         global_context = get_global_transaction()
         if global_context and self.pool in global_context.connections:
             # Mark for rollback in global context
@@ -168,7 +167,7 @@ class SQLExecutor(Executor[SQLQuery]):
                 # Could optionally trigger immediate global rollback
                 await global_context.rollback_all()
             return
-            
+
         # Otherwise, proceed with single-executor rollback
         existing = self.pool.existing_connection()
         transaction = self.pool.in_transaction()
@@ -189,13 +188,13 @@ class SQLExecutor(Executor[SQLQuery]):
     async def transaction(self):
         # Check if we're part of a global transaction
         from mayim.transaction import get_global_transaction
-        
+
         global_context = get_global_transaction()
         if global_context and self.pool in global_context.connections:
             # We're already in a global transaction, just yield
             yield
             return
-            
+
         # Otherwise, proceed with single-executor transaction as before
         self.pool._transaction.set(True)
         async with self.pool.connection() as conn:

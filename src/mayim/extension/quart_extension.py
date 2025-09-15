@@ -22,8 +22,7 @@ except ModuleNotFoundError:
     Quart = type("Quart", (), {})  # type: ignore
 
 
-class Default:
-    ...
+class Default: ...
 
 
 _default = Default()

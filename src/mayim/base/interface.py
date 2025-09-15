@@ -30,20 +30,16 @@ class BaseInterface(ABC):
         BaseInterface.registered_interfaces.add(cls)
 
     @abstractmethod
-    def _setup_pool(self):
-        ...
+    def _setup_pool(self): ...
 
     @abstractmethod
-    async def open(self):
-        ...
+    async def open(self): ...
 
     @abstractmethod
-    async def close(self):
-        ...
+    async def close(self): ...
 
     @abstractmethod
-    def connection(self, timeout: Optional[float] = None):
-        ...
+    def connection(self, timeout: Optional[float] = None): ...
 
     def __init__(
         self,
@@ -125,12 +121,16 @@ class BaseInterface(ABC):
             parts = urlparse(dsn)
             # Default values for common database ports
             defaults = {
-                "port": 5432 if "postgres" in dsn else 3306 if "mysql" in dsn else None,
+                "port": (
+                    5432
+                    if "postgres" in dsn
+                    else 3306 if "mysql" in dsn else None
+                ),
                 "hostname": "localhost",
                 "username": None,
                 "password": None,
                 "path": "/",
-                "query": ""
+                "query": "",
             }
             for key, mapping in URLPARSE_MAPPING.items():
                 if not getattr(self, mapping.key):

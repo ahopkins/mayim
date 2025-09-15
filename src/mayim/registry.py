@@ -105,6 +105,7 @@ class PoolRegistry:
     Registry to ensure executors with the same DSN share the same pool instance.
     This prevents duplicate connections and enables proper transaction coordination.
     """
+
     _singleton = None
     _pools: Dict[str, BaseInterface]
 
@@ -114,30 +115,38 @@ class PoolRegistry:
         return cls._singleton
 
     @classmethod
-    def get_or_create(cls, dsn: str, pool_class: Type[BaseInterface], min_size: int = 1, max_size: Optional[int] = None) -> BaseInterface:
+    def get_or_create(
+        cls,
+        dsn: str,
+        pool_class: Type[BaseInterface],
+        min_size: int = 1,
+        max_size: Optional[int] = None,
+    ) -> BaseInterface:
         """
         Get existing pool or create new one for DSN.
-        
+
         Args:
             dsn: Database connection string
             pool_class: Class to use for creating new pool
             min_size: Minimum number of connections in pool
             max_size: Maximum number of connections in pool
-            
+
         Returns:
             Shared pool instance for the DSN
         """
         instance = cls()
         if dsn not in instance._pools:
-            instance._pools[dsn] = pool_class(dsn, min_size=min_size, max_size=max_size)
+            instance._pools[dsn] = pool_class(
+                dsn, min_size=min_size, max_size=max_size
+            )
         return instance._pools[dsn]
-    
+
     @classmethod
     def get(cls, dsn: str) -> Optional[BaseInterface]:
         """Get pool for DSN if it exists"""
         instance = cls()
         return instance._pools.get(dsn)
-    
+
     @classmethod
     def reset(cls):
         """Reset the registry (useful for testing)"""

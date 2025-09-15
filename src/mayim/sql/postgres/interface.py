@@ -36,9 +36,10 @@ class PostgresPool(BaseInterface):
                 "pip install mayim[postgres]"
             )
         self._pool = AsyncConnectionPool(
-            self.full_dsn, 
+            self.full_dsn,
             min_size=self.min_size,
-            max_size=self.max_size
+            max_size=self.max_size,
+            open=False,
         )
 
     async def open(self):

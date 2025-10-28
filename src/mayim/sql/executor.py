@@ -24,6 +24,7 @@ from mayim.exception import MayimError, MissingSQL, RecordNotFound
 from mayim.lazy.interface import LazyPool
 from mayim.registry import LazyHydratorRegistry, LazyQueryRegistry
 from mayim.sql.query import ParamType, SQLQuery
+from mayim.transaction import TransactionCoordinator
 
 if sys.version_info < (3, 10):  # no cov
     UnionType = type("UnionType", (), {})
@@ -155,60 +156,81 @@ class SQLExecutor(Executor[SQLQuery]):
         params: Optional[Dict[str, Any]] = None,
     ): ...
 
-    async def rollback(self, *, silent: bool = False) -> None:
-        # Check if we're part of a global transaction
-        from mayim.transaction import get_global_transaction
+    def _get_or_create_coordinator(self) -> TransactionCoordinator:
+        """Get existing coordinator or create new one for this executor"""
+        # Store coordinator on the executor instance to avoid race conditions
+        # between multiple executors sharing the same pool
+        if not hasattr(self, "_transaction_coordinator"):
+            self._transaction_coordinator = None
 
-        global_context = get_global_transaction()
-        if global_context and self.pool in global_context.connections:
-            # Mark for rollback in global context
-            global_context.commit_flags[self.pool] = False
-            if not silent:
-                # Could optionally trigger immediate global rollback
-                await global_context.rollback_all()
+        if self._transaction_coordinator is None:
+            self._transaction_coordinator = TransactionCoordinator(
+                executors=[self]
+            )
+
+        return self._transaction_coordinator
+
+    def _clear_coordinator(self) -> None:
+        """Clear the coordinator from this executor"""
+        if hasattr(self, "_transaction_coordinator"):
+            self._transaction_coordinator = None
+
+    async def begin(self) -> None:
+        # Check if we already have an active transaction
+        if self.pool.in_transaction():
             return
 
-        # Otherwise, proceed with single-executor rollback
-        existing = self.pool.existing_connection()
-        transaction = self.pool.in_transaction()
-        if not existing or not transaction:
+        coordinator = self._get_or_create_coordinator()
+        try:
+            await coordinator.begin()
+        except Exception:
+            self._clear_coordinator()
+            raise
+
+    async def rollback(self, *, silent: bool = False) -> None:
+        if not self.pool.in_transaction():
             if silent:
                 return
             raise MayimError("Cannot rollback non-existing transaction")
-        await self._rollback(existing)
 
-    async def _rollback(self, existing) -> None:
-        self.pool._commit.set(False)
-        await existing.rollback()
+        coordinator = self._get_or_create_coordinator()
+        try:
+            await coordinator.rollback()
+        finally:
+            self._clear_coordinator()
 
-    def _get_method(self, as_list: bool) -> str:
-        return "fetchall" if as_list else "fetchone"
+    async def commit(self, *, silent: bool = False) -> None:
+        if not self.pool.in_transaction():
+            if silent:
+                return
+            raise MayimError("Cannot commit non-existing transaction")
+
+        coordinator = self._get_or_create_coordinator()
+        try:
+            await coordinator.commit()
+        finally:
+            self._clear_coordinator()
 
     @asynccontextmanager
     async def transaction(self):
-        # Check if we're part of a global transaction
-        from mayim.transaction import get_global_transaction
-
-        global_context = get_global_transaction()
-        if global_context and self.pool in global_context.connections:
-            # We're already in a global transaction, just yield
+        # Check if we're already in a transaction (managed by
+        # TransactionCoordinator)
+        if self.pool.in_transaction():
+            # We're already in a transaction, just yield
             yield
             return
 
-        # Otherwise, proceed with single-executor transaction as before
-        self.pool._transaction.set(True)
-        async with self.pool.connection() as conn:
-            self.pool._connection.set(conn)
-            try:
+        # Otherwise, create a single-executor transaction using
+        # TransactionCoordinator
+        coordinator = self._get_or_create_coordinator()
+        try:
+            async with coordinator:
                 yield
-            except Exception:
-                await self.rollback(silent=True)
-                raise
-            else:
-                self.pool._commit.set(True)
-            finally:
-                self.pool._connection.set(None)
-                self.pool._transaction.set(False)
+        finally:
+            self._clear_coordinator()
+
+    def _get_method(self, as_list: bool) -> str:
+        return "fetchall" if as_list else "fetchone"
 
     @classmethod
     def _load(cls, strict: bool) -> None:

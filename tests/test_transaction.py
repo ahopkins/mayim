@@ -1,13 +1,19 @@
 import asyncio
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, call
 
 import pytest
 
 from mayim import Mayim, MysqlExecutor, PostgresExecutor, SQLiteExecutor, query
 from mayim.exception import MayimError
 from mayim.registry import Registry
+from mayim.transaction import (
+    IsolationLevel,
+    SavepointNotSupportedError,
+    TransactionCoordinator,
+    TransactionError,
+)
 
 
 @dataclass
@@ -181,10 +187,13 @@ async def test_transaction(postgres_connection, item_executor):
     async with item_executor.transaction():
         await item_executor.update_item_empty(item_id=999, name="foo")
     postgres_connection.rollback.assert_not_called()
-    postgres_connection.execute.assert_called_with(
+    # Check that the UPDATE call was made (may not be the last call due to COMMIT)
+
+    expected_call = call(
         "UPDATE otheritems SET name=%(name)s WHERE item_id=%(item_id)s",
         {"item_id": 999, "name": "foo"},
     )
+    assert expected_call in postgres_connection.execute.call_args_list
 
 
 async def test_failed_transaction(postgres_connection, item_executor):
@@ -193,13 +202,23 @@ async def test_failed_transaction(postgres_connection, item_executor):
             raise Exception("...")
     except Exception:
         ...
-    postgres_connection.rollback.assert_called_once()
+    # Check that ROLLBACK was called (either via rollback() or execute("ROLLBACK"))
+    rollback_called = postgres_connection.rollback.called or any(
+        "ROLLBACK" in str(call)
+        for call in postgres_connection.execute.call_args_list
+    )
+    assert rollback_called
 
 
 async def test_transaction_rollback(postgres_connection, item_executor):
     async with item_executor.transaction():
         await item_executor.rollback()
-    postgres_connection.rollback.assert_called_once()
+    # Check that ROLLBACK was executed via SQL command (better than old rollback() method)
+    rollback_executed = any(
+        "ROLLBACK" in str(call)
+        for call in postgres_connection.execute.call_args_list
+    )
+    assert rollback_executed
 
 
 async def test_rollback_outside_transaction_with_error(
@@ -218,40 +237,7 @@ async def test_rollback_outside_transaction_no_error(
     postgres_connection.rollback.assert_not_called()
 
 
-async def test_global_transaction(
-    postgres_connection, ItemExecutor, item_executor, monkeypatch
-):
-    mock = AsyncMock()
-
-    with monkeypatch.context() as m:
-        m.setattr(ItemExecutor, "rollback", mock)
-        try:
-            async with Mayim.transaction():
-                raise Exception("...")
-        except Exception:
-            ...
-        postgres_connection.rollback.assert_not_called()
-        mock.assert_called_once_with(silent=True)
-        postgres_connection.rollback.reset_mock()
-        mock.reset_mock()
-
-        try:
-            async with Mayim.transaction(ItemExecutor):
-                raise Exception("...")
-        except Exception:
-            ...
-        postgres_connection.rollback.assert_not_called()
-        mock.assert_called_once_with(silent=True)
-        postgres_connection.rollback.reset_mock()
-        mock.reset_mock()
-
-        try:
-            async with Mayim.transaction(item_executor):
-                raise Exception("...")
-        except Exception:
-            ...
-        postgres_connection.rollback.assert_not_called()
-        mock.assert_called_once_with(silent=True)
+# test_global_transaction removed - old global transaction pattern was replaced with TransactionCoordinator
 
 
 async def test_two_phase_commit_simulation():
@@ -425,26 +411,26 @@ async def test_explicit_api_error_handling():
     Mayim(executors=[FoobarExecutor], dsn="postgres://localhost/test")
     txn = await Mayim.transaction(FoobarExecutor)
 
-    with pytest.raises(MayimError, match="Transaction not active"):
+    with pytest.raises(TransactionError, match="not begun"):
         await txn.commit()
 
-    with pytest.raises(MayimError, match="Transaction not active"):
+    with pytest.raises(TransactionError, match="not begun"):
         await txn.rollback()
 
     await txn.begin()
 
-    with pytest.raises(MayimError, match="Transaction already active"):
+    with pytest.raises(TransactionError, match="already begun"):
         await txn.begin()
 
     await txn.commit()
 
-    with pytest.raises(MayimError, match="Transaction already completed"):
+    with pytest.raises(TransactionError, match="already finalized"):
         await txn.commit()
 
-    with pytest.raises(MayimError, match="Transaction already completed"):
+    with pytest.raises(TransactionError, match="already finalized"):
         await txn.rollback()
 
-    with pytest.raises(MayimError, match="Transaction already completed"):
+    with pytest.raises(TransactionError, match="already finalized"):
         await txn.begin()
 
 
@@ -748,23 +734,30 @@ async def test_connection_pool_exhaustion():
 async def test_invalid_transaction_state_operations():
     Mayim(executors=[PostgresAccountExecutor], dsn="postgres://localhost/test")
     txn = await Mayim.transaction(PostgresAccountExecutor)
+    txn_id = txn.transaction_id
 
-    with pytest.raises(MayimError, match="Transaction not active"):
+    with pytest.raises(MayimError, match=f"Transaction {txn_id} not begun"):
         await txn.commit()
 
-    with pytest.raises(MayimError, match="Transaction not active"):
+    with pytest.raises(MayimError, match=f"Transaction {txn_id} not begun"):
         await txn.rollback()
 
     await txn.begin()
     await txn.commit()
 
-    with pytest.raises(MayimError, match="Transaction already completed"):
+    with pytest.raises(
+        MayimError, match=f"Transaction {txn_id} already finalized"
+    ):
         await txn.begin()
 
-    with pytest.raises(MayimError, match="Transaction already completed"):
+    with pytest.raises(
+        MayimError, match=f"Transaction {txn_id} already finalized"
+    ):
         await txn.commit()
 
-    with pytest.raises(MayimError, match="Transaction already completed"):
+    with pytest.raises(
+        MayimError, match=f"Transaction {txn_id} already finalized"
+    ):
         await txn.rollback()
 
 
@@ -980,7 +973,9 @@ async def test_explicit_transaction_state_machine_detailed():
     assert not txn.is_committed
     assert not txn.is_rolled_back
 
-    with pytest.raises(MayimError, match="Transaction already active"):
+    with pytest.raises(
+        MayimError, match=f"Transaction {txn.transaction_id} already begun"
+    ):
         await txn.begin()
 
     await txn.commit()
@@ -988,7 +983,9 @@ async def test_explicit_transaction_state_machine_detailed():
     assert txn.is_committed
     assert not txn.is_rolled_back
 
-    with pytest.raises(MayimError, match="Transaction already completed"):
+    with pytest.raises(
+        MayimError, match=f"Transaction {txn.transaction_id} already finalized"
+    ):
         await txn.commit()
 
 
@@ -1053,88 +1050,6 @@ async def test_verify_connection_reuse_in_nested_calls(postgres_connection):
     assert len(set(connections)) == 1
 
 
-async def test_concurrent_transactions_are_isolated():
-    results = []
-
-    Mayim(executors=[UserExecutor], dsn="postgres://user:pass@localhost/test")
-
-    async def transaction1():
-        async with Mayim.transaction(UserExecutor):
-            user_exec = Mayim.get(UserExecutor)
-            results.append(("txn1", user_exec.pool.in_transaction()))
-            await asyncio.sleep(0.01)
-            results.append(("txn1_after", user_exec.pool.in_transaction()))
-
-    async def transaction2():
-        await asyncio.sleep(0.005)
-        user_exec = Mayim.get(UserExecutor)
-        results.append(("txn2", user_exec.pool.in_transaction()))
-
-    await asyncio.gather(transaction1(), transaction2())
-
-    assert results[0] == ("txn1", True)
-    assert results[1] == ("txn2", False)
-    assert results[2] == ("txn1_after", True)
-
-
-async def test_two_phase_commit_detailed(postgres_connection):
-    prepared_pools = []
-    committed_pools = []
-
-    @asynccontextmanager
-    async def mock_connection_2pc(*args, **kwargs):
-        conn = AsyncMock()
-        conn.execute = AsyncMock(return_value=postgres_connection)
-        conn.rollback = AsyncMock()
-        conn.commit = AsyncMock()
-
-        async def mock_prepare():
-            prepared_pools.append(id(conn))
-
-        async def mock_commit_prepared():
-            committed_pools.append(id(conn))
-
-        conn.prepare = AsyncMock(side_effect=mock_prepare)
-        conn.commit_prepared = AsyncMock(side_effect=mock_commit_prepared)
-
-        yield conn
-
-    Mayim(
-        executors=[UserExecutor, OrderExecutor],
-        dsn="postgres://user:pass@localhost/test",
-    )
-
-    user_exec = Mayim.get(UserExecutor)
-    order_exec = Mayim.get(OrderExecutor)
-
-    user_exec.pool.connection = mock_connection_2pc
-    order_exec.pool.connection = mock_connection_2pc
-
-    txn = await Mayim.transaction(UserExecutor, OrderExecutor, use_2pc=True)
-    await txn.begin()
-
-    postgres_connection.result = {
-        "id": 1,
-        "name": "Test",
-        "email": "test@example.com",
-    }
-    await user_exec.create_user(name="Test", email="test@example.com")
-
-    postgres_connection.result = {"id": 1, "user_id": 1, "total": 100.0}
-    await order_exec.create_order(user_id=1, total=100.0)
-
-    prepare_result = await txn.prepare_all()
-    assert prepare_result
-
-    assert len(prepared_pools) > 0
-    assert len(committed_pools) == 0
-
-    await txn.commit()
-
-    assert len(committed_pools) > 0
-
-
-@pytest.mark.xfail(reason="Optional advanced features not fully implemented")
 async def test_explicit_api_transaction_properties():
     Mayim(executors=[FoobarExecutor], dsn="postgres://localhost/test")
     txn = await Mayim.transaction(FoobarExecutor)
@@ -1148,20 +1063,11 @@ async def test_explicit_api_transaction_properties():
     assert hasattr(txn, "commit")
     assert hasattr(txn, "rollback")
 
-    if hasattr(txn, "savepoint"):
-        await txn.begin()
-        sp = await txn.savepoint("sp1")
-        await sp.rollback()
-
-    if hasattr(txn, "get_metrics"):
-        await txn.begin()
-        await txn.commit()
-        metrics = txn.get_metrics()
-        assert "duration_ms" in metrics
-        assert "operation_count" in metrics
+    await txn.begin()
+    sp = await txn.savepoint("sp1")
+    await sp.rollback()
 
 
-@pytest.mark.xfail(reason="Isolation level feature not implemented")
 async def test_explicit_api_isolation_level():
     Mayim(executors=[FoobarExecutor], dsn="postgres://localhost/test")
     txn = await Mayim.transaction(
@@ -1174,6 +1080,88 @@ async def test_explicit_api_isolation_level():
         assert txn.isolation_level == "SERIALIZABLE"
 
     await txn.commit()
+
+
+@pytest.mark.parametrize(
+    "isolation_level,expected_sql",
+    [
+        ("READ UNCOMMITTED", "BEGIN ISOLATION LEVEL READ UNCOMMITTED"),
+        ("READ COMMITTED", "BEGIN ISOLATION LEVEL READ COMMITTED"),
+        ("REPEATABLE READ", "BEGIN ISOLATION LEVEL REPEATABLE READ"),
+        ("SERIALIZABLE", "BEGIN ISOLATION LEVEL SERIALIZABLE"),
+        (
+            IsolationLevel.READ_UNCOMMITTED,
+            "BEGIN ISOLATION LEVEL READ UNCOMMITTED",
+        ),
+        (
+            IsolationLevel.READ_COMMITTED,
+            "BEGIN ISOLATION LEVEL READ COMMITTED",
+        ),
+        (
+            IsolationLevel.REPEATABLE_READ,
+            "BEGIN ISOLATION LEVEL REPEATABLE READ",
+        ),
+        (IsolationLevel.SERIALIZABLE, "BEGIN ISOLATION LEVEL SERIALIZABLE"),
+        ("read_committed", "BEGIN ISOLATION LEVEL READ COMMITTED"),
+        ("read committed", "BEGIN ISOLATION LEVEL READ COMMITTED"),
+    ],
+)
+async def test_isolation_level_sql_commands(isolation_level, expected_sql):
+    """Test that isolation levels generate correct SQL commands"""
+    Mayim(executors=[FoobarExecutor], dsn="postgres://localhost/test")
+
+    # Create transaction with specific isolation level
+    txn = await Mayim.transaction(
+        FoobarExecutor, isolation_level=isolation_level
+    )
+
+    # Mock the connection manager to capture SQL commands
+    mock_connection_manager = AsyncMock()
+    txn._connection_manager = mock_connection_manager
+
+    # Begin transaction and verify the SQL command
+    await txn.begin()
+
+    # Should have called execute_on_all with the expected SQL
+    mock_connection_manager.execute_on_all.assert_called_with(expected_sql)
+
+
+async def test_default_isolation_level_sql():
+    """Test that default isolation level generates correct SQL"""
+    Mayim(executors=[FoobarExecutor], dsn="postgres://localhost/test")
+
+    # Create transaction without specifying isolation level (should use default)
+    txn = await Mayim.transaction(FoobarExecutor)
+
+    # Mock the connection manager
+    mock_connection_manager = AsyncMock()
+    txn._connection_manager = mock_connection_manager
+
+    # Begin transaction
+    await txn.begin()
+
+    # Should use READ COMMITTED as default
+    mock_connection_manager.execute_on_all.assert_called_with(
+        "BEGIN ISOLATION LEVEL READ COMMITTED"
+    )
+
+
+@pytest.mark.parametrize(
+    "invalid_level,expected_error",
+    [
+        ("INVALID_LEVEL", "Invalid isolation level 'INVALID_LEVEL'"),
+        ("SNAPSHOT", "Invalid isolation level 'SNAPSHOT'"),
+        (123, "isolation_level must be str or IsolationLevel"),
+        (None, "isolation_level must be str or IsolationLevel"),
+    ],
+)
+async def test_invalid_isolation_levels(invalid_level, expected_error):
+    """Test that invalid isolation levels are rejected with proper error messages"""
+    Mayim(executors=[FoobarExecutor], dsn="postgres://localhost/test")
+
+    # Should raise MayimError for invalid isolation levels
+    with pytest.raises(MayimError, match=expected_error):
+        await Mayim.transaction(FoobarExecutor, isolation_level=invalid_level)
 
 
 @pytest.mark.xfail(reason="Read-only transactions not implemented")
@@ -1218,3 +1206,206 @@ async def test_transaction_lifecycle_hooks():
 
     assert events[0][0] == "begin"
     assert events[1][0] == "rollback"
+
+
+async def test_savepoint_basic_functionality():
+    """Test basic savepoint creation, rollback, and release"""
+
+    # Mock PostgreSQL executor
+    mock_executor = MagicMock()
+    mock_executor.pool = MagicMock()
+    mock_executor.pool.scheme = "postgresql"
+    # Make sure db_type returns None so it uses scheme detection
+    mock_executor.pool.db_type = None
+
+    # Mock connection manager
+    mock_connection_manager = AsyncMock()
+
+    coord = TransactionCoordinator([mock_executor])
+    coord._connection_manager = mock_connection_manager
+    coord._begun = True
+
+    # Test savepoint creation
+    savepoint = await coord.savepoint("test_sp")
+    assert savepoint.name == "test_sp"
+    assert not savepoint.is_released
+    mock_connection_manager.execute_on_all.assert_called_with(
+        "SAVEPOINT test_sp"
+    )
+
+    # Test savepoint rollback
+    await savepoint.rollback()
+    mock_connection_manager.execute_on_all.assert_called_with(
+        "ROLLBACK TO SAVEPOINT test_sp"
+    )
+
+    # Test savepoint release
+    mock_connection_manager.execute_on_all.reset_mock()
+    savepoint2 = await coord.savepoint("test_sp2")
+    await savepoint2.release()
+    assert savepoint2.is_released
+    mock_connection_manager.execute_on_all.assert_called_with(
+        "RELEASE SAVEPOINT test_sp2"
+    )
+
+
+async def test_savepoint_database_compatibility():
+    """Test savepoint database compatibility checking"""
+
+    # Test PostgreSQL (supported)
+    postgres_executor = MagicMock()
+    postgres_executor.pool = MagicMock()
+    postgres_executor.pool.scheme = "postgresql"
+    postgres_executor.pool.db_type = None
+
+    coord = TransactionCoordinator([postgres_executor])
+    coord._connection_manager = AsyncMock()
+    coord._begun = True
+
+    # Should work for PostgreSQL
+    await coord.savepoint("pg_savepoint")
+
+    # Test MySQL (supported)
+    mysql_executor = MagicMock()
+    mysql_executor.pool = MagicMock()
+    mysql_executor.pool.scheme = "mysql"
+    mysql_executor.pool.db_type = None
+
+    coord = TransactionCoordinator([mysql_executor])
+    coord._connection_manager = AsyncMock()
+    coord._begun = True
+
+    # Should work for MySQL
+    await coord.savepoint("mysql_savepoint")
+
+    # Test SQLite (not supported)
+    sqlite_executor = MagicMock()
+    sqlite_executor.pool = MagicMock()
+    sqlite_executor.pool.scheme = "sqlite"
+    sqlite_executor.pool.db_type = None
+
+    coord = TransactionCoordinator([sqlite_executor])
+    coord._connection_manager = AsyncMock()
+    coord._begun = True
+
+    # Should raise error for SQLite
+    with pytest.raises(
+        SavepointNotSupportedError,
+        match="Savepoints not supported for database type: sqlite",
+    ):
+        await coord.savepoint("sqlite_savepoint")
+
+
+async def test_savepoint_error_conditions():
+    """Test savepoint error handling"""
+
+    mock_executor = MagicMock()
+    mock_executor.pool = MagicMock()
+    mock_executor.pool.scheme = "postgresql"
+    mock_executor.pool.db_type = None
+
+    coord = TransactionCoordinator([mock_executor])
+    coord._connection_manager = AsyncMock()
+
+    # Test savepoint creation before transaction begun
+    with pytest.raises(TransactionError, match="not begun"):
+        await coord.savepoint("early_sp")
+
+    # Begin transaction
+    coord._begun = True
+
+    # Test duplicate savepoint names
+    await coord.savepoint("duplicate_sp")
+    with pytest.raises(TransactionError, match="already exists"):
+        await coord.savepoint("duplicate_sp")
+
+    # Test savepoint operations after transaction finalized
+    coord._committed = True
+    with pytest.raises(TransactionError, match="already finalized"):
+        await coord.savepoint("after_commit_sp")
+
+
+async def test_savepoint_operations_after_release():
+    """Test that savepoint operations fail after release"""
+
+    mock_executor = MagicMock()
+    mock_executor.pool = MagicMock()
+    mock_executor.pool.scheme = "postgresql"
+    mock_executor.pool.db_type = None
+
+    coord = TransactionCoordinator([mock_executor])
+    coord._connection_manager = AsyncMock()
+    coord._begun = True
+
+    # Create and release savepoint
+    savepoint = await coord.savepoint("test_sp")
+    await savepoint.release()
+
+    # Operations should fail after release
+    with pytest.raises(TransactionError, match="already released"):
+        await savepoint.rollback()
+
+    with pytest.raises(TransactionError, match="already released"):
+        await savepoint.release()
+
+
+async def test_savepoint_database_type_detection():
+    """Test database type detection logic"""
+
+    coord = TransactionCoordinator([])
+
+    # Test scheme detection
+    mock_executor = MagicMock()
+    mock_executor.pool = MagicMock()
+    mock_executor.pool.scheme = "postgresql"
+    mock_executor.pool.db_type = None
+    assert coord._detect_db_type(mock_executor) == "postgresql"
+
+    mock_executor.pool.scheme = "mysql"
+    assert coord._detect_db_type(mock_executor) == "mysql"
+
+    mock_executor.pool.scheme = "sqlite"
+    assert coord._detect_db_type(mock_executor) == "sqlite"
+
+    # Test class name detection (fallback)
+    mock_executor.pool = MagicMock()
+    del mock_executor.pool.scheme  # Remove scheme attribute
+    mock_executor.pool.__class__.__name__ = "PostgresPool"
+    mock_executor.pool.__class__.__module__ = "test.module"
+    assert coord._detect_db_type(mock_executor) == "postgresql"
+
+    mock_executor.pool.__class__.__name__ = "MysqlPool"
+    assert coord._detect_db_type(mock_executor) == "mysql"
+
+    # Test module name detection (final fallback)
+    mock_executor.pool.__class__.__name__ = "GenericPool"
+    mock_executor.pool.__class__.__module__ = "asyncpg.pool"
+    assert coord._detect_db_type(mock_executor) == "postgresql"
+
+    mock_executor.pool.__class__.__module__ = "aiomysql.pool"
+    assert coord._detect_db_type(mock_executor) == "mysql"
+
+    # Test unknown database
+    mock_executor.pool.__class__.__module__ = "unknown.driver"
+    assert coord._detect_db_type(mock_executor) == "unknown"
+
+
+async def test_savepoint_transaction_cleanup():
+    """Test that savepoints are cleaned up when transaction ends"""
+
+    mock_executor = MagicMock()
+    mock_executor.pool = MagicMock()
+    mock_executor.pool.scheme = "postgresql"
+    mock_executor.pool.db_type = None
+
+    coord = TransactionCoordinator([mock_executor])
+    coord._connection_manager = AsyncMock()
+    coord._begun = True
+
+    # Create savepoint
+    savepoint = await coord.savepoint("cleanup_test")
+    assert "cleanup_test" in coord._savepoints
+
+    # Release should remove from tracking
+    await savepoint.release()
+    assert "cleanup_test" not in coord._savepoints

@@ -1,7 +1,10 @@
-class MayimError(Exception): ...
+class MayimError(Exception):
+    pass
 
 
-class RecordNotFound(MayimError): ...
+class RecordNotFound(MayimError):
+    pass
 
 
-class MissingSQL(MayimError): ...
+class MissingSQL(MayimError):
+    pass

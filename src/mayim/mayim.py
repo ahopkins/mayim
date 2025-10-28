@@ -1,6 +1,6 @@
 from asyncio import get_running_loop
 from inspect import isclass
-from typing import Optional, Sequence, Type, TypeVar, Union
+from typing import Literal, Optional, Sequence, Type, TypeVar, Union
 from urllib.parse import urlparse
 
 from mayim.base import Executor, Hydrator
@@ -11,6 +11,7 @@ from mayim.registry import InterfaceRegistry, PoolRegistry, Registry
 from mayim.sql.executor import SQLExecutor
 from mayim.sql.postgres.interface import PostgresPool
 from mayim.transaction import TransactionCoordinator
+from mayim.transaction.interfaces import IsolationLevel
 
 T = TypeVar("T", bound=Executor)
 DEFAULT_INTERFACE = PostgresPool
@@ -252,39 +253,90 @@ class Mayim:
         *executors: Union[SQLExecutor, Type[SQLExecutor]],
         use_2pc: bool = False,
         timeout: Optional[float] = None,
+        isolation_level: Union[
+            Literal[
+                "READ UNCOMMITTED",
+                "READ COMMITTED",
+                "REPEATABLE READ",
+                "SERIALIZABLE",
+            ],
+            IsolationLevel,
+            str,
+        ] = IsolationLevel.READ_COMMITTED,
     ):
         """
         Create a transaction across multiple executors.
 
         Can be used as either:
-        1. Old style context manager: async with Mayim.transaction(exec1, exec2):
-        2. New style: txn = await Mayim.transaction(exec1, exec2); await txn.begin()
-        3. New style context: async with await Mayim.transaction(exec1, exec2) as txn:
+            async with Mayim.transaction(exec1, exec2):
+        or:
+            txn = await Mayim.transaction(exec1, exec2); await txn.begin()
+        or:
+            async with await Mayim.transaction(exec1, exec2) as txn:
 
         Args:
             executors: Executor classes or instances to include in transaction.
                       If not provided, includes all registered SQL executors.
             use_2pc: Whether to use two-phase commit protocol if available.
-            timeout: Maximum duration in seconds before transaction is automatically rolled back.
+            timeout: Maximum duration in seconds before transaction
+                is automatically rolled back.
+            isolation_level: SQL isolation level.
+                Can be a string like "SERIALIZABLE" or IsolationLevel enum.
 
         Returns:
             _TransactionWrapper that provides backward compatibility
         """
-        return _TransactionWrapper(cls, executors, use_2pc, timeout)
+        return _TransactionWrapper(
+            cls, executors, use_2pc, timeout, isolation_level
+        )
 
 
 class _TransactionWrapper:
     """
     Wrapper to provide backward compatibility for Mayim.transaction().
-    Can be used both as an awaitable (new style) and as async context manager (old style).
+    Can be used both as an awaitable (new style)
+    and as async context manager (old style).
     """
 
-    def __init__(self, mayim_cls, executors, use_2pc=False, timeout=None):
+    def __init__(
+        self,
+        mayim_cls,
+        executors,
+        use_2pc=False,
+        timeout=None,
+        isolation_level=IsolationLevel.READ_COMMITTED,
+    ):
         self._mayim_cls = mayim_cls
         self._executors = executors
         self._coordinator = None
         self._use_2pc = use_2pc
         self._timeout = timeout
+        self._isolation_level = self._normalize_isolation_level(
+            isolation_level
+        )
+
+    def _normalize_isolation_level(self, isolation_level):
+        """Convert string isolation levels to IsolationLevel enum"""
+        # Check if it's already an IsolationLevel enum
+        if isinstance(isolation_level, IsolationLevel):
+            return isolation_level
+
+        if isinstance(isolation_level, str):
+            isolation_upper = isolation_level.upper()
+            try:
+                return IsolationLevel[isolation_upper.replace(" ", "_")]
+            except KeyError:
+                # If no exact match, raise an error
+                valid_levels = [level.value for level in IsolationLevel]
+                raise MayimError(
+                    f"Invalid isolation level '{isolation_level}'. "
+                    f"Valid levels: {valid_levels}"
+                )
+
+        raise MayimError(
+            f"isolation_level must be str or IsolationLevel, "
+            f"got {type(isolation_level)}"
+        )
 
     def __await__(self):
         """Support: txn = await Mayim.transaction(...)"""
@@ -294,10 +346,8 @@ class _TransactionWrapper:
 
         return _create().__await__()
 
-    async def _create_coordinator(self) -> TransactionCoordinator:
-        """Create the actual TransactionCoordinator"""
+    async def _create_coordinator(self):
         if not self._executors:
-            # Default to all registered SQL executors
             executors = tuple(
                 executor
                 for executor in Registry().values()
@@ -309,7 +359,6 @@ class _TransactionWrapper:
         else:
             executors = self._executors
 
-        # Convert classes to instances and validate
         resolved_executors = []
         for maybe_executor in executors:
             if maybe_executor is None:
@@ -319,7 +368,8 @@ class _TransactionWrapper:
                 # First check if it's a SQL executor class
                 if not issubclass(maybe_executor, SQLExecutor):
                     raise MayimError(
-                        f"All executors must be SQL executors, got {maybe_executor}"
+                        f"All executors must be SQL executors, "
+                        f"got {maybe_executor}"
                     )
                 try:
                     executor = self._mayim_cls.get(maybe_executor)
@@ -332,14 +382,17 @@ class _TransactionWrapper:
                 # Validate it's a SQL executor instance
                 if not isinstance(executor, SQLExecutor):
                     raise MayimError(
-                        f"All executors must be SQL executors, got {type(executor)}"
+                        f"All executors must be SQL executors, "
+                        f"got {type(executor)}"
                     )
-                # For instances, check if they're registered by checking if we can get the class
+                # For instances, check if they're registered by checking
+                # if we can get the class
                 try:
                     registered_instance = self._mayim_cls.get(
                         executor.__class__
                     )
-                    # If the registered instance is different, the passed instance is not registered
+                    # If the registered instance is different, the passed
+                    # instance is not registered
                     if registered_instance is not executor:
                         raise MayimError(f"Executor {executor} not registered")
                 except MayimError:
@@ -347,10 +400,14 @@ class _TransactionWrapper:
 
             resolved_executors.append(executor)
 
-        # Return the transaction coordinator
-        return TransactionCoordinator(
-            resolved_executors, use_2pc=self._use_2pc, timeout=self._timeout
+        coordinator = TransactionCoordinator(
+            executors=resolved_executors,
+            use_2pc=self._use_2pc,
+            timeout=self._timeout,
+            isolation_level=self._isolation_level,
         )
+
+        return coordinator
 
     async def __aenter__(self):
         """Support old style: async with Mayim.transaction(...)"""

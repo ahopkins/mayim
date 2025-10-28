@@ -102,8 +102,9 @@ class LazyHydratorRegistry:
 
 class PoolRegistry:
     """
-    Registry to ensure executors with the same DSN share the same pool instance.
-    This prevents duplicate connections and enables proper transaction coordination.
+    Registry to ensure executors with the same DSN share the same pool
+    instance. This prevents duplicate connections and enables proper
+    transaction coordination.
     """
 
     _singleton = None

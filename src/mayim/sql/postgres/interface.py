@@ -66,7 +66,7 @@ class PostgresPool(BaseInterface):
         Yields:
             Iterator[AsyncIterator[Connection]]: A database connection
         """
-        existing = self._connection.get(None)
+        existing = self.existing_connection()
         if existing:
             yield existing
         else:

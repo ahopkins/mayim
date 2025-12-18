@@ -78,8 +78,6 @@ class Savepoint:
             # Remove from coordinator's savepoint tracking
             if self.name in self.coordinator._savepoints:
                 del self.coordinator._savepoints[self.name]
-
-            logger.info(f"Successfully released savepoint {self.name}")
         except Exception as e:
             logger.error(f"Failed to release savepoint {self.name}: {e}")
             raise TransactionError(

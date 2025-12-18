@@ -93,9 +93,6 @@ class TransactionCoordinator:
 
             self._begun = True
             self._start_time = time.time()
-            logger.info(
-                "Transaction %s started successfully", self.transaction_id
-            )
 
         except Exception as e:
             await self._cleanup()
@@ -135,10 +132,6 @@ class TransactionCoordinator:
             await self._connection_manager.execute_on_all("COMMIT")
             self._committed = True
             self._begun = False
-
-            logger.info(
-                "Transaction %s committed successfully", self.transaction_id
-            )
 
         except Exception as e:
             logger.error(
@@ -309,7 +302,7 @@ class TransactionCoordinator:
             savepoint = Savepoint(name, self)
             self._savepoints[name] = savepoint
 
-            logger.info(
+            logger.debug(
                 "Created savepoint %s in transaction %s",
                 name,
                 self.transaction_id,

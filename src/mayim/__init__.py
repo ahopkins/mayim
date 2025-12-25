@@ -10,6 +10,8 @@ from .sql.postgres.executor import PostgresExecutor
 from .sql.postgres.interface import PostgresPool
 from .sql.sqlite.executor import SQLiteExecutor
 from .sql.sqlite.interface import SQLitePool
+from .sql.sqlserver.executor import SQLServerExecutor
+from .sql.sqlserver.interface import SQLServerPool
 
 __version__ = version("mayim")
 
@@ -24,6 +26,8 @@ __all__ = (
     "MysqlPool",
     "PostgresExecutor",
     "SQLiteExecutor",
+    "SQLServerExecutor",
     "PostgresPool",
     "SQLitePool",
+    "SQLServerPool",
 )

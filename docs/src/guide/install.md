@@ -60,3 +60,20 @@ Or, as a convenience:
 ```
 pip install mayim[sqlite]
 ```
+
+## SQL Server
+
+Dependencies:
+- [pyodbc](https://github.com/mkleehammer/pyodbc)
+
+Either install it independently:
+
+```
+pip install pyodbc
+```
+
+Or, as a convenience:
+
+```
+pip install mayim[sqlserver]
+```

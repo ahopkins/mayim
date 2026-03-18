@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections import namedtuple
+from contextvars import ContextVar
 from typing import Any, Optional, Set, Type
 from urllib.parse import urlparse
 
@@ -100,8 +101,9 @@ class BaseInterface(ABC):
         self._min_size = min_size
         self._max_size = max_size
         self._full_dsn: Optional[str] = None
-        # Transaction connection (set by transaction coordinator)
-        self._transaction_connection: Optional[Any] = None
+        self._transaction_connection: ContextVar[Optional[Any]] = ContextVar(
+            f"_txn_conn_{id(self)}", default=None
+        )
 
         self._populate_connection_args()
         self._populate_dsn()
@@ -196,11 +198,11 @@ class BaseInterface(ABC):
 
     def existing_connection(self):
         """Get existing connection (transaction connection if available)"""
-        return self._transaction_connection
+        return self._transaction_connection.get()
 
     def in_transaction(self) -> bool:
         """Check if in transaction"""
-        return self._transaction_connection is not None
+        return self._transaction_connection.get() is not None
 
     def do_commit(self) -> bool:
         """Check if should commit (always True for simplified system)"""
@@ -208,8 +210,8 @@ class BaseInterface(ABC):
 
     def _set_transaction_connection(self, connection) -> None:
         """Set transaction connection (used by transaction coordinator)"""
-        self._transaction_connection = connection
+        self._transaction_connection.set(connection)
 
     def _clear_transaction_connection(self) -> None:
         """Clear transaction connection"""
-        self._transaction_connection = None
+        self._transaction_connection.set(None)

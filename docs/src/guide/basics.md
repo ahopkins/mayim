@@ -26,7 +26,7 @@ We will get into it in [more detail later](executors), but the `Executor` is the
 
 You need to:
 
-- **subclass** `Executor` (more likely you want one of its subclasses: `PostgresExecutor`, `MysqlExecutor`, `SQLiteExecutor`);
+- **subclass** `Executor` (more likely you want one of its subclasses: `PostgresExecutor`, `MysqlExecutor`, `SQLiteExecutor`, `ClickhouseExecutor`);
 - create **method definitions** that match the names of your SQL statements (yes, those methods will likely be empty as seen in the snippet below);
 - name the **arguments** that will be injected into the query; and
 - provide the model you want to be returned as the **return annotation** (or annotate it as a `Dict` if that is what you want back).

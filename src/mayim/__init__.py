@@ -4,6 +4,8 @@ from .base.executor import Executor
 from .base.hydrator import Hydrator
 from .decorator import hydrator, query, register
 from .mayim import Mayim
+from .sql.clickhouse.executor import ClickhouseExecutor
+from .sql.clickhouse.interface import ClickhousePool
 from .sql.mysql.executor import MysqlExecutor
 from .sql.mysql.interface import MysqlPool
 from .sql.postgres.executor import PostgresExecutor
@@ -20,6 +22,8 @@ __all__ = (
     "Executor",
     "Hydrator",
     "Mayim",
+    "ClickhouseExecutor",
+    "ClickhousePool",
     "MysqlExecutor",
     "MysqlPool",
     "PostgresExecutor",

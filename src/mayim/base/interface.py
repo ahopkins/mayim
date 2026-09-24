@@ -122,7 +122,11 @@ class BaseInterface(ABC):
                 "port": (
                     5432
                     if "postgres" in dsn
-                    else 3306 if "mysql" in dsn else None
+                    else (
+                        3306
+                        if "mysql" in dsn
+                        else 8123 if "clickhouse" in dsn else None
+                    )
                 ),
                 "hostname": "localhost",
                 "username": None,

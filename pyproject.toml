@@ -20,6 +20,7 @@ include_trailing_comma = true
 module = [
     "aiosqlite.*",
     "asyncmy.*",
+    "clickhouse_connect.*",
     "psycopg_pool.*",
     "psycopg.*",
     "quart.*",

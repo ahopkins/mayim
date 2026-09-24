@@ -1367,6 +1367,9 @@ async def test_savepoint_database_type_detection():
     mock_executor.pool.scheme = "sqlite"
     assert coord._detect_db_type(mock_executor) == "sqlite"
 
+    mock_executor.pool.scheme = "clickhouse"
+    assert coord._detect_db_type(mock_executor) == "clickhouse"
+
     # Test class name detection (fallback)
     mock_executor.pool = MagicMock()
     del mock_executor.pool.scheme  # Remove scheme attribute
@@ -1409,3 +1412,60 @@ async def test_savepoint_transaction_cleanup():
     # Release should remove from tracking
     await savepoint.release()
     assert "cleanup_test" not in coord._savepoints
+
+
+def test_coordinator_rejects_non_transactional_pool():
+    """Pools that opt out of transactions cannot join a coordinator"""
+
+    mock_executor = MagicMock()
+    mock_executor.pool = MagicMock()
+    mock_executor.pool.supports_transactions = False
+
+    with pytest.raises(MayimError, match="does not support transactions"):
+        TransactionCoordinator([mock_executor])
+
+
+async def test_explicit_transaction_with_non_transactional_pool():
+    """Explicitly including a non-transactional executor raises"""
+
+    class Exec1(PostgresExecutor):
+        pass
+
+    Mayim(executors=[Exec1], dsn="postgres://localhost/test")
+
+    non_transactional_pool = MagicMock()
+    non_transactional_pool.supports_transactions = False
+
+    class Exec2(PostgresExecutor):
+        pass
+
+    exec2 = Exec2(pool=non_transactional_pool)
+
+    with pytest.raises(MayimError, match="does not support transactions"):
+        await Mayim.transaction(exec2)
+
+
+async def test_default_transaction_skips_non_transactional_pools():
+    """The no-argument form includes only transactional executors"""
+
+    class Exec1(PostgresExecutor):
+        pass
+
+    Mayim(executors=[Exec1], dsn="postgres://localhost/test")
+
+    non_transactional_pool = MagicMock()
+    non_transactional_pool.supports_transactions = False
+
+    class Exec2(PostgresExecutor):
+        pass
+
+    Exec2(pool=non_transactional_pool)
+
+    txn = await Mayim.transaction()
+    await txn.begin()
+
+    executor_classes = [executor.__class__ for executor in txn.executors]
+    assert Exec1 in executor_classes
+    assert Exec2 not in executor_classes
+
+    await txn.commit()

@@ -1,3 +1,4 @@
+import logging
 from asyncio import get_running_loop
 from inspect import isclass
 from typing import Literal, Optional, Sequence, Type, TypeVar, Union
@@ -15,6 +16,8 @@ from mayim.transaction.interfaces import IsolationLevel
 
 T = TypeVar("T", bound=Executor)
 DEFAULT_INTERFACE = PostgresPool
+
+logger = logging.getLogger(__name__)
 
 
 class Mayim:
@@ -399,6 +402,24 @@ class _TransactionWrapper:
                     raise MayimError(f"Executor {executor} not registered")
 
             resolved_executors.append(executor)
+
+        if not self._executors:
+            # When including every registered executor, data sources that
+            # cannot participate in a coordinated transaction (ClickHouse,
+            # for example) are skipped so that their presence alone does
+            # not break transactions for everything else. Explicitly
+            # naming such an executor still raises
+            transactional_executors = []
+            for executor in resolved_executors:
+                if not getattr(executor.pool, "supports_transactions", True):
+                    logger.warning(
+                        "%s does not support transactions and will not "
+                        "participate in this transaction",
+                        executor.__class__.__name__,
+                    )
+                    continue
+                transactional_executors.append(executor)
+            resolved_executors = transactional_executors
 
         coordinator = TransactionCoordinator(
             executors=resolved_executors,

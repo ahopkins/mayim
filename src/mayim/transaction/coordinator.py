@@ -35,6 +35,16 @@ class TransactionCoordinator:
         self.timeout = timeout or 300.0  # 5 minutes default
         self.use_2pc = use_2pc
         self._executors = self._resolve_executors(executors)
+        for executor in self._executors:
+            # Pools may opt out of transactions (ClickHouse, for example,
+            # has no interactive transactions). Checked with truthiness
+            # rather than identity so that mock pools still pass
+            if not getattr(executor.pool, "supports_transactions", True):
+                raise MayimError(
+                    f"{executor.__class__.__name__} is attached to a data "
+                    "source that does not support transactions. Remove it "
+                    "from the transaction."
+                )
         self._connection_manager = TransactionConnectionManager(
             self.transaction_id, self.timeout
         )
@@ -333,6 +343,7 @@ class TransactionCoordinator:
         postgres = "postgresql"
         mysql = "mysql"
         sqlite = "sqlite"
+        clickhouse = "clickhouse"
 
         # Check for scheme attribute first (most reliable)
         if hasattr(pool, "scheme"):
@@ -343,6 +354,8 @@ class TransactionCoordinator:
                 return mysql
             elif scheme == "sqlite":
                 return sqlite
+            elif scheme.startswith("clickhouse"):
+                return clickhouse
 
         # Check class name for Pool types
         class_name = pool.__class__.__name__.lower()
@@ -352,6 +365,8 @@ class TransactionCoordinator:
             return mysql
         elif "sqlite" in class_name:
             return sqlite
+        elif "clickhouse" in class_name:
+            return clickhouse
 
         # Fallback to module name detection
         pool_module = pool.__class__.__module__.lower()
@@ -361,5 +376,7 @@ class TransactionCoordinator:
             return mysql
         elif "sqlite" in pool_module or "aiosqlite" in pool_module:
             return sqlite
+        elif "clickhouse" in pool_module:
+            return clickhouse
 
         return "unknown"

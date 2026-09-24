@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock
 from mayim import Mayim, register
 from mayim.base.executor import Executor
 from mayim.registry import Registry
+from mayim.sql.clickhouse.interface import ClickhousePool
 from mayim.sql.mysql.interface import MysqlPool
 from mayim.sql.postgres.interface import PostgresPool
 
@@ -130,3 +131,8 @@ def test_fallback_to_postgres(FooExecutor):
 def test_fallback_to_mysql(FooExecutor):
     Mayim(dsn="mysql://user:password@host:1234/db")
     assert Executor._fallback_pool._derivative is MysqlPool
+
+
+def test_fallback_to_clickhouse(FooExecutor):
+    Mayim(dsn="clickhouse://user:password@host:1234/db")
+    assert Executor._fallback_pool._derivative is ClickhousePool

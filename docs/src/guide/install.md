@@ -84,3 +84,22 @@ A few things to keep in mind when using ClickHouse:
 - Query parameters are bound client side using pyformat values. A literal `%` in a query that takes parameters must therefore be escaped as `%%` (unlike with Postgres).
 - Methods that should not return anything (such as `INSERT` or DDL statements) should either have no return annotation or be annotated with `-> None` so they are routed through the driver's `command` method.
 - The HTTP driver manages its own connection pool, so `min_size` has no effect; `max_size` maps onto the driver's connection limit.
+- Per-request HTTP headers (for example a W3C `traceparent` or a request ID) can be attached by overriding the `transport_settings()` method on your executor. It is evaluated for every query and command — so it is safe to derive the value from per-task context such as a `ContextVar`, even though the underlying client is shared — and the returned mapping is applied to that single request only:
+
+  ```python
+  from contextvars import ContextVar
+
+  request_id: ContextVar[Optional[str]] = ContextVar(
+      "request_id", default=None
+  )
+
+
+  class ItemExecutor(ClickhouseExecutor):
+      async def select_item(self, item_id: int) -> Item: ...
+
+      def transport_settings(self) -> Optional[Dict[str, str]]:
+          value = request_id.get()
+          if value is None:
+              return None
+          return {"x-request-id": value}
+  ```

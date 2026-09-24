@@ -1,7 +1,8 @@
+from contextvars import ContextVar
 from dataclasses import asdict, dataclass
 from types import SimpleNamespace
-from typing import List, Optional
-from unittest.mock import AsyncMock, MagicMock
+from typing import Dict, List, Optional
+from unittest.mock import AsyncMock, MagicMock, call
 
 import pytest
 
@@ -11,6 +12,8 @@ from mayim.sql.clickhouse import interface
 from mayim.sql.clickhouse.interface import ClickhousePool
 
 DSN = "clickhouse://default:password@localhost:8123/default"
+
+request_id: ContextVar[Optional[str]] = ContextVar("request_id", default=None)
 
 
 @pytest.fixture
@@ -72,6 +75,33 @@ async def clickhouse_executor(mock_clickhouse_pool, ClickhouseItemExecutor):
     return Mayim.get(ClickhouseItemExecutor)
 
 
+@pytest.fixture
+def TracedItemExecutor():
+    single_query = "SELECT * FROM items WHERE item_id=$item_id"
+    insert_query = "INSERT INTO items VALUES ($item_id, $name)"
+
+    class TracedItemExecutor(ClickhouseExecutor):
+        @query(single_query)
+        async def select_item(self, item_id: int) -> Item: ...
+
+        @query(insert_query)
+        async def insert_item(self, item_id: int, name: str) -> None: ...
+
+        def transport_settings(self) -> Optional[Dict[str, str]]:
+            value = request_id.get()
+            if value is None:
+                return None
+            return {"x-request-id": value}
+
+    return TracedItemExecutor
+
+
+@pytest.fixture
+async def traced_executor(mock_clickhouse_pool, TracedItemExecutor):
+    Mayim(executors=[TracedItemExecutor], dsn=DSN)
+    return Mayim.get(TracedItemExecutor)
+
+
 async def test_returns_single_item(clickhouse_client, clickhouse_executor):
     clickhouse_client.query.return_value = SimpleNamespace(
         result_rows=[(999, "FooBar")],
@@ -82,6 +112,7 @@ async def test_returns_single_item(clickhouse_client, clickhouse_executor):
     clickhouse_client.query.assert_called_with(
         "SELECT * FROM items WHERE item_id=%(item_id)s",
         parameters={"item_id": 999},
+        transport_settings=None,
     )
     assert isinstance(result, Item)
     assert asdict(result) == {"item_id": 999, "name": "FooBar"}
@@ -97,7 +128,9 @@ async def test_returns_single_item_positional(
     result = await clickhouse_executor.select_item_positional(item_id=999)
 
     clickhouse_client.query.assert_called_with(
-        "SELECT * FROM items WHERE item_id=%s", parameters=[999]
+        "SELECT * FROM items WHERE item_id=%s",
+        parameters=[999],
+        transport_settings=None,
     )
     assert isinstance(result, Item)
     assert asdict(result) == {"item_id": 999, "name": "FooBar"}
@@ -111,7 +144,7 @@ async def test_returns_multiple_items(clickhouse_client, clickhouse_executor):
     results = await clickhouse_executor.select_items()
 
     clickhouse_client.query.assert_called_with(
-        "SELECT * FROM items", parameters=None
+        "SELECT * FROM items", parameters=None, transport_settings=None
     )
     assert [asdict(result) for result in results] == [
         {"item_id": 999, "name": "FooBar"},
@@ -153,9 +186,99 @@ async def test_no_result_uses_command(clickhouse_client, clickhouse_executor):
     clickhouse_client.command.assert_called_with(
         "INSERT INTO items VALUES (%(item_id)s, %(name)s)",
         parameters={"item_id": 1, "name": "Foo"},
+        transport_settings=None,
     )
     clickhouse_client.query.assert_not_called()
     assert result is None
+
+
+async def test_transport_settings_none_without_context(
+    clickhouse_client, traced_executor
+):
+    clickhouse_client.query.return_value = SimpleNamespace(
+        result_rows=[(999, "FooBar")],
+        column_names=("item_id", "name"),
+    )
+    await traced_executor.select_item(item_id=999)
+
+    clickhouse_client.query.assert_called_with(
+        "SELECT * FROM items WHERE item_id=%(item_id)s",
+        parameters={"item_id": 999},
+        transport_settings=None,
+    )
+
+
+async def test_transport_settings_forwarded_to_query(
+    clickhouse_client, traced_executor
+):
+    clickhouse_client.query.return_value = SimpleNamespace(
+        result_rows=[(999, "FooBar")],
+        column_names=("item_id", "name"),
+    )
+    token = request_id.set("req-1")
+    try:
+        await traced_executor.select_item(item_id=999)
+    finally:
+        request_id.reset(token)
+
+    clickhouse_client.query.assert_called_with(
+        "SELECT * FROM items WHERE item_id=%(item_id)s",
+        parameters={"item_id": 999},
+        transport_settings={"x-request-id": "req-1"},
+    )
+
+
+async def test_transport_settings_forwarded_to_command(
+    clickhouse_client, traced_executor
+):
+    token = request_id.set("req-2")
+    try:
+        result = await traced_executor.insert_item(item_id=1, name="Foo")
+    finally:
+        request_id.reset(token)
+
+    clickhouse_client.command.assert_called_with(
+        "INSERT INTO items VALUES (%(item_id)s, %(name)s)",
+        parameters={"item_id": 1, "name": "Foo"},
+        transport_settings={"x-request-id": "req-2"},
+    )
+    clickhouse_client.query.assert_not_called()
+    assert result is None
+
+
+async def test_transport_settings_evaluated_per_call(
+    clickhouse_client, traced_executor
+):
+    clickhouse_client.query.return_value = SimpleNamespace(
+        result_rows=[(999, "FooBar")],
+        column_names=("item_id", "name"),
+    )
+    token = request_id.set("req-1")
+    try:
+        await traced_executor.select_item(item_id=999)
+        request_id.set("req-2")
+        await traced_executor.select_item(item_id=999)
+        await traced_executor.insert_item(item_id=1, name="Foo")
+    finally:
+        request_id.reset(token)
+
+    assert clickhouse_client.query.call_args_list == [
+        call(
+            "SELECT * FROM items WHERE item_id=%(item_id)s",
+            parameters={"item_id": 999},
+            transport_settings={"x-request-id": "req-1"},
+        ),
+        call(
+            "SELECT * FROM items WHERE item_id=%(item_id)s",
+            parameters={"item_id": 999},
+            transport_settings={"x-request-id": "req-2"},
+        ),
+    ]
+    clickhouse_client.command.assert_called_with(
+        "INSERT INTO items VALUES (%(item_id)s, %(name)s)",
+        parameters={"item_id": 1, "name": "Foo"},
+        transport_settings={"x-request-id": "req-2"},
+    )
 
 
 async def test_transaction_not_supported(clickhouse_executor):

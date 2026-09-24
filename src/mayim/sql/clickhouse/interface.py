@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Optional
+from typing import Any, AsyncIterator, Dict, Optional
+from urllib.parse import parse_qsl
 
 from mayim.base.interface import BaseInterface
 from mayim.exception import MayimError
@@ -33,6 +34,50 @@ class ClickhousePool(BaseInterface):
     client is therefore created and yielded for every request, with the
     `max_size` of the pool mapping onto the driver's connector limit.
 
+    There are two distinct ways to push configuration at ClickHouse, and
+    they are easy to confuse:
+
+    - **Query settings** (this class' `settings`) are server side
+      execution controls such as `readonly`, `max_execution_time` or
+      `max_result_rows`. They are handed to the driver once, when the
+      shared client is created, and therefore apply to every query made
+      through the pool for the lifetime of that client. Reach for these
+      when you want static caps, for example a service that should only
+      ever run bounded, read-only queries regardless of what the
+      ClickHouse user has been granted.
+    - **Transport settings**
+      (`mayim.sql.clickhouse.executor.ClickhouseExecutor.transport_settings`)
+      are HTTP headers attached to a single request. That hook is
+      re-evaluated for every query and command, so it is the one to
+      override for request scoped context such as a `traceparent` or a
+      request ID pulled from a `ContextVar`.
+
+    Query settings may be passed as a `settings` mapping, as DSN query
+    parameters, or both:
+
+    ```python
+    ClickhousePool(
+        "clickhouse://user:password@localhost:8123/default",
+        settings={"readonly": 1, "max_execution_time": 30},
+    )
+    ClickhousePool(
+        "clickhouse://user:password@localhost:8123/default"
+        "?readonly=1&max_execution_time=30"
+    )
+    ```
+
+    Every DSN query parameter is treated as a ClickHouse setting, since
+    this interface has no other use for the query string. Values parsed
+    from a DSN are always strings (`readonly="1"`), which is what the
+    HTTP protocol transmits anyway. Where a key is supplied both ways,
+    the `settings` mapping wins.
+
+    Args:
+        settings (Dict[str, Any], optional): ClickHouse query settings
+            applied to every query made through this pool. Merged over
+            any settings parsed from the DSN query string. Defaults to
+            `None`.
+
     Attributes:
         supports_transactions (bool): Always `False`. ClickHouse does not
             support the interactive transactions that the transaction
@@ -42,14 +87,36 @@ class ClickhousePool(BaseInterface):
     scheme = "clickhouse"
     supports_transactions = False
 
+    def __init__(
+        self,
+        *args,
+        settings: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ) -> None:
+        # Assigned before the base class runs, since its __init__ calls
+        # _setup_pool() inline
+        self._settings_override = dict(settings) if settings else {}
+        super().__init__(*args, **kwargs)
+
     def _setup_pool(self):
         if not CLICKHOUSE_ENABLED:
             raise MayimError(
                 "ClickHouse driver not found. Try reinstalling Mayim: "
                 "pip install mayim[clickhouse] (requires Python 3.10+)"
             )
+        self._settings: Dict[str, Any] = {
+            **self._settings_from_query(),
+            **self._settings_override,
+        }
         self._client = None
         self._client_lock = asyncio.Lock()
+
+    def _settings_from_query(self) -> Dict[str, Any]:
+        return dict(parse_qsl(self._query)) if self._query else {}
+
+    @property
+    def settings(self) -> Dict[str, Any]:
+        return self._settings
 
     async def _get_client(self):
         if self._client is None:
@@ -66,6 +133,7 @@ class ClickhousePool(BaseInterface):
                         connector_limit=(
                             self.max_size or DEFAULT_CONNECTOR_LIMIT
                         ),
+                        settings=self._settings,
                     )
         return self._client
 

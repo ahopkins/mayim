@@ -103,3 +103,28 @@ A few things to keep in mind when using ClickHouse:
               return None
           return {"x-request-id": value}
   ```
+
+- ClickHouse *query settings* (server-side execution controls such as `readonly`, `max_execution_time` or `max_result_rows`) are a separate mechanism from the HTTP headers above. They are passed to `ClickhousePool` and handed to the driver once, when the shared client is created, so they apply to every query made through that pool for the lifetime of the client. Reach for them when you want static caps — for example a service that should only ever run bounded, read-only queries, regardless of what the ClickHouse user has been granted. Use `transport_settings()` for per-request context; use `settings` for fixed limits.
+
+  They can be supplied as a mapping, as DSN query parameters, or both:
+
+  ```python
+  from mayim.sql.clickhouse.interface import ClickhousePool
+
+  pool = ClickhousePool(
+      "clickhouse://user:password@localhost:8123/default",
+      settings={"readonly": 1, "max_execution_time": 30},
+  )
+  Mayim(executors=[ItemExecutor], pool=pool)
+
+  # Or, entirely from the DSN, which also works with Mayim(dsn=...)
+  Mayim(
+      executors=[ItemExecutor],
+      dsn=(
+          "clickhouse://user:password@localhost:8123/default"
+          "?readonly=1&max_execution_time=30"
+      ),
+  )
+  ```
+
+  Every DSN query parameter is treated as a ClickHouse setting, since the interface has no other use for the query string. Values parsed from a DSN are always strings (`readonly="1"`), which is what the HTTP protocol transmits anyway. Where a key is given both ways, the `settings` mapping wins.

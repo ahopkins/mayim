@@ -305,6 +305,7 @@ async def test_pool_passes_connection_args(mock_clickhouse_pool):
         password="password",
         database="default",
         connector_limit=100,
+        settings={},
     )
 
 
@@ -321,7 +322,49 @@ async def test_pool_defaults_http_port(mock_clickhouse_pool):
         password=None,
         database="db",
         connector_limit=100,
+        settings={},
     )
+
+
+async def test_pool_passes_settings_kwarg(mock_clickhouse_pool):
+    pool = ClickhousePool(
+        DSN, settings={"readonly": 1, "max_execution_time": 30}
+    )
+
+    async with pool.connection():
+        ...
+
+    assert mock_clickhouse_pool.await_args.kwargs["settings"] == {
+        "readonly": 1,
+        "max_execution_time": 30,
+    }
+
+
+async def test_pool_parses_settings_from_dsn(mock_clickhouse_pool):
+    pool = ClickhousePool(f"{DSN}?readonly=1&max_execution_time=30")
+
+    async with pool.connection():
+        ...
+
+    assert mock_clickhouse_pool.await_args.kwargs["settings"] == {
+        "readonly": "1",
+        "max_execution_time": "30",
+    }
+
+
+async def test_pool_settings_kwarg_overrides_dsn(mock_clickhouse_pool):
+    pool = ClickhousePool(
+        f"{DSN}?max_execution_time=30",
+        settings={"max_execution_time": 5, "readonly": 1},
+    )
+
+    async with pool.connection():
+        ...
+
+    assert mock_clickhouse_pool.await_args.kwargs["settings"] == {
+        "max_execution_time": 5,
+        "readonly": 1,
+    }
 
 
 async def test_pool_open_and_close(mock_clickhouse_pool, clickhouse_client):
